@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import ChatLavagem from "@/components/ChatLavagem";
 
 type Etapa = "inicio" | "foto-cavalo" | "foto-carreta" | "processando" | "confirmacao" | "salvando" | "sucesso";
 
@@ -412,6 +413,8 @@ export default function RegistrarPage() {
           </div>
         )}
       </main>
+
+      <ChatLavagem />
     </div>
   );
 }
