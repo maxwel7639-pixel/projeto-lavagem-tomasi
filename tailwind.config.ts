@@ -9,17 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
+        mx: {
+          bg: "#050507",
+          card: "#0D0D12",
+          border: "#1D1D26",
+          text: "#FFFFFF",
+          muted: "#9090A0",
+          soft: "#C4C4D0",
+          roxo: "#6D5CF5",
+          roxo2: "#8B7CF8",
+          verde: "#2F9E6F",
         },
       },
     },
