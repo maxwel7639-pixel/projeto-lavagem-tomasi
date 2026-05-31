@@ -62,7 +62,7 @@ export default function PainelPage() {
 
     let query = supabase
       .from("lavagens").select("*, perfis(nome)")
-      .gte("data_hora", inicio).lt("data_hora", fim)
+      .gte("data_hora", inicio).lt("data_hora", fim).eq("excluido", false)
       .order("data_hora", { ascending: false });
 
     if (lavadorSelecionado) query = query.eq("registrado_por", lavadorSelecionado);
@@ -314,6 +314,17 @@ export default function PainelPage() {
                 <span className={l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
                   {l.tipo === "bau" ? "Baú" : "Sider"}
                 </span>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Excluir esta lavagem?")) return;
+                    const supabase = createClient();
+                    await supabase.from("lavagens").update({ excluido: true, excluido_em: new Date().toISOString() }).eq("id", l.id);
+                    carregarDados();
+                  }}
+                  className="text-xs text-red-400 hover:text-red-300 transition-colors px-2"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
