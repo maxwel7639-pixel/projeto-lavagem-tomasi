@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { LavagemComPerfil } from "@/lib/types";
+import ChatLavagem from "@/components/ChatLavagem";
 
 interface Lavador {
   id: string;
@@ -233,6 +234,8 @@ export default function PainelPage() {
           </div>
         )}
       </main>
+
+      <ChatLavagem onLavagemSalva={carregarDados} />
     </div>
   );
 }
