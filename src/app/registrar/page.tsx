@@ -45,16 +45,20 @@ export default function RegistrarPage() {
   const inputCarretaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    console.log("[registrar] montou — URL:", window.location.href);
     let cancelado = false;
     async function checar() {
       const supabase = createClient();
-      await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("[registrar] getSession concluiu — session:", session?.user?.id ?? "null");
       if (cancelado) return;
-      // NÃO redireciona aqui — evita qualquer piscar. O RLS protege os dados.
       setAutenticado(true);
     }
     checar();
-    return () => { cancelado = true; };
+    return () => {
+      console.log("[registrar] desmontou");
+      cancelado = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
