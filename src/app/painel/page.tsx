@@ -128,7 +128,7 @@ export default function PainelPage() {
 
     let query = supabase
       .from("lavagens").select("*, perfis(nome)")
-      .gte("data_hora", inicio).lt("data_hora", fim)
+      .gte("data_hora", inicio).lt("data_hora", fim).eq("excluido", false)
       .order("data_hora", { ascending: false });
 
     if (lavadorSelecionado) query = query.eq("registrado_por", lavadorSelecionado);

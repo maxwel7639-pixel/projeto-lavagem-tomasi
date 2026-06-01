@@ -14,6 +14,7 @@ export interface Lavagem {
   foto_cavalo_url: string | null;
   foto_carreta_url: string | null;
   escopo: "ambos" | "cavalo" | "carreta" | null;
+  excluido: boolean;
 }
 
 export interface LavagemComPerfil extends Lavagem {
