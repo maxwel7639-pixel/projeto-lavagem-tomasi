@@ -83,12 +83,10 @@ export default function PainelPage() {
   const [usuarios, setUsuarios] = useState<PerfilUsuario[]>([]);
 
   useEffect(() => {
-    console.log("[painel] montou — URL:", window.location.href);
     let cancelado = false;
     async function checar() {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
-      console.log("[painel] getSession concluiu — session:", session?.user?.id ?? "null");
       if (cancelado) return;
       // NÃO redireciona aqui — evita qualquer piscar. O RLS protege os dados.
       if (session) {
@@ -104,10 +102,7 @@ export default function PainelPage() {
       setAutenticado(true);
     }
     checar();
-    return () => {
-      console.log("[painel] desmontou");
-      cancelado = true;
-    };
+    return () => { cancelado = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
