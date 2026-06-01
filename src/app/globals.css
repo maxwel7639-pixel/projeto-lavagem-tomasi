@@ -7,27 +7,61 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-gray-50 text-gray-900;
+    background-color: #050507;
+    color: #ffffff;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl
-      hover:bg-blue-700 active:bg-blue-800 transition-colors duration-150
-      disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
+    @apply inline-flex items-center justify-center gap-2
+      bg-[#6D5CF5] text-white font-semibold
+      py-3 px-6 rounded-full
+      transition-colors duration-150
+      disabled:opacity-50 disabled:cursor-not-allowed;
+    box-shadow: 0 0 25px rgba(109, 92, 245, 0.45);
   }
+  .btn-primary:hover:not(:disabled) {
+    background-color: #8B7CF8;
+  }
+
   .btn-secondary {
-    @apply w-full bg-white text-blue-600 font-semibold py-3 px-6 rounded-xl border-2 border-blue-600
-      hover:bg-blue-50 active:bg-blue-100 transition-colors duration-150
-      disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
+    @apply inline-flex items-center justify-center gap-2
+      bg-transparent text-[#8B7CF8] font-semibold
+      py-3 px-6 rounded-full
+      transition-colors duration-150
+      disabled:opacity-50 disabled:cursor-not-allowed;
+    border: 1px solid rgba(109, 92, 245, 0.35);
   }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: rgba(109, 92, 245, 0.08);
+  }
+
   .input-field {
-    @apply w-full border border-gray-300 rounded-xl px-4 py-3 text-base
-      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-      placeholder-gray-400 bg-white;
+    @apply w-full bg-[#0D0D12] text-white rounded-xl px-4 py-3 text-base
+      placeholder-[#9090A0]
+      focus:outline-none focus:ring-2 focus:ring-[#6D5CF5] focus:border-transparent;
+    border: 1px solid #1D1D26;
   }
+
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-100 p-6;
+    @apply bg-[#0D0D12] rounded-2xl p-6;
+    border: 1px solid #1D1D26;
+  }
+
+  .badge-roxo {
+    @apply text-xs font-semibold px-3 py-1 rounded-full text-[#8B7CF8];
+    background: rgba(109, 92, 245, 0.14);
+    border: 1px solid rgba(109, 92, 245, 0.35);
+  }
+
+  .badge-verde {
+    @apply text-xs font-semibold px-3 py-1 rounded-full text-[#2F9E6F];
+    background: rgba(47, 158, 111, 0.14);
+    border: 1px solid rgba(47, 158, 111, 0.35);
+  }
+
+  .section-label {
+    @apply text-xs font-semibold tracking-widest uppercase text-[#8B7CF8];
   }
 }

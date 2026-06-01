@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
   title: "Lava-Jato Tomasi",
@@ -20,14 +23,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#2563eb",
+  themeColor: "#6D5CF5",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <head>
@@ -37,7 +36,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Lava-Jato Tomasi" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="min-h-screen">{children}</body>
+      <body className={`${inter.className} min-h-screen bg-mx-bg text-mx-text`}>
+        {children}
+      </body>
     </html>
   );
 }

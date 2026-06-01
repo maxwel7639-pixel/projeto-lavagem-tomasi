@@ -4,8 +4,8 @@
   "description": "Sistema de registro de lavagens de caminhões",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#050507",
+  "theme_color": "#6D5CF5",
   "orientation": "portrait",
   "icons": [
     {
