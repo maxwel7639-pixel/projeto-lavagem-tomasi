@@ -231,7 +231,7 @@ export default function PainelPage() {
       formatarData(x.data_hora),
       x.placa_cavalo || "-",
       [x.placa_carreta, x.placa_carreta_2].filter(Boolean).join(" / ") || "-",
-      x.tipo === "bau" ? "Bau" : "Sider",
+      x.tipo === "bau" ? "Bau" : x.tipo === "sider" ? "Sider" : "-",
       x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : x.escopo === "truck" ? "Truck" : x.escopo === "rodotrem" ? "Rodotrem" : "Ambos",
       x.perfis?.nome || "-",
       formatarValor(calcularValor(x, precoCheio)),
