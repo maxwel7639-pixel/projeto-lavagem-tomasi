@@ -46,14 +46,25 @@ export default function RegistrarPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) { router.replace("/"); return; }
-      const { data: perfil } = await supabase
-        .from("perfis").select("papel").eq("id", data.session.user.id).single();
-      if (perfil?.papel === "gestor" || perfil?.papel === "dev") { router.replace("/painel"); return; }
-      if (perfil?.papel !== "lavador") { router.replace("/"); return; }
+    let ativo = true;
+
+    async function verificar(session: import("@supabase/supabase-js").Session | null) {
+      if (!ativo) return;
+      if (!session) { router.replace("/"); return; }
+      const { data: perfil, error } = await supabase
+        .from("perfis").select("papel").eq("id", session.user.id).single();
+      if (!ativo) return;
+      if (error || !perfil) { router.replace("/"); return; }
+      if (perfil.papel === "gestor" || perfil.papel === "dev") { router.replace("/painel"); return; }
+      if (perfil.papel !== "lavador") { router.replace("/"); return; }
       setAutenticado(true);
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      verificar(session);
     });
+
+    return () => { ativo = false; sub.subscription.unsubscribe(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

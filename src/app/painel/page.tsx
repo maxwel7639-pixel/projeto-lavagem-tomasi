@@ -84,19 +84,32 @@ export default function PainelPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) { router.replace("/"); return; }
-      const uid = data.session.user.id;
-      setUserId(uid);
-      const { data: perfil } = await supabase
+    let ativo = true;
+
+    async function verificar(session: import("@supabase/supabase-js").Session | null) {
+      if (!ativo) return;
+      if (!session) { router.replace("/"); return; }
+      const uid = session.user.id;
+      const { data: perfil, error } = await supabase
         .from("perfis").select("papel, nome").eq("id", uid).single();
-      if (!perfil || (perfil.papel !== "gestor" && perfil.papel !== "dev")) {
+      if (!ativo) return;
+      // Em caso de erro de leitura, não redireciona em loop — manda pro login
+      if (error || !perfil) { router.replace("/"); return; }
+      if (perfil.papel !== "gestor" && perfil.papel !== "dev") {
         router.replace("/registrar"); return;
       }
+      setUserId(uid);
       setNomeGestor(perfil.nome ?? "Gestor");
       setIsDev(perfil.papel === "dev");
       setAutenticado(true);
+    }
+
+    // onAuthStateChange dispara INITIAL_SESSION assim que o storage é resolvido
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      verificar(session);
     });
+
+    return () => { ativo = false; sub.subscription.unsubscribe(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
