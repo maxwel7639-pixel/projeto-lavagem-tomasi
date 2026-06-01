@@ -97,7 +97,8 @@ export default function PainelPage() {
       setIsDev(perfil.papel === "dev");
       setAutenticado(true);
     });
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Carrega dados dev
   useEffect(() => {

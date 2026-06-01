@@ -51,7 +51,8 @@ export default function RegistrarPage() {
         .from("perfis").select("papel").eq("id", data.session.user.id).single();
       if (perfil?.papel !== "lavador") router.replace("/painel");
     });
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleFotoCavalo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
