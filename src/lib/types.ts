@@ -13,7 +13,7 @@ export interface Lavagem {
   registrado_por: string | null;
   foto_cavalo_url: string | null;
   foto_carreta_url: string | null;
-  escopo: "ambos" | "cavalo" | "carreta" | null;
+  escopo: "ambos" | "cavalo" | "carreta" | "truck" | null;
   excluido: boolean;
 }
 

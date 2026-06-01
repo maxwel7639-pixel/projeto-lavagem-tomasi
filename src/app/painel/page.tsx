@@ -41,7 +41,7 @@ function mesParaLabel(valor: string) {
 
 function calcularValor(escopo: string | null | undefined, precoCheio: number): number {
   if (escopo === "cavalo" || escopo === "carreta") return precoCheio / 2;
-  return precoCheio;
+  return precoCheio; // ambos e truck = preço cheio
 }
 
 function formatarValor(v: number) {
@@ -427,7 +427,7 @@ export default function PainelPage() {
                 </div>
                 <span className="text-xs text-mx-muted hidden sm:block">{l.perfis?.nome ?? "—"}</span>
                 <span className={l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
-                  {l.tipo === "bau" ? "Baú" : "Sider"}
+                  {l.escopo === "truck" ? (l.tipo === "bau" ? "T.Baú" : "T.Sider") : (l.tipo === "bau" ? "Baú" : "Sider")}
                 </span>
                 {!isDev && (
                   <div className="flex flex-col items-end gap-0.5">
