@@ -146,10 +146,11 @@ export default function PainelPage() {
     setLavadores(lavadoresData ?? []);
 
     const { data: configData } = await supabase
-      .from("configuracoes").select("preco_cheio").order("atualizado_em", { ascending: false }).limit(1).single();
-    if (configData) {
-      setPrecoCheio(Number(configData.preco_cheio));
-      setPrecoEditando(String(configData.preco_cheio));
+      .from("configuracoes").select("preco_cheio").order("atualizado_em", { ascending: false }).limit(1);
+    const config = configData?.[0];
+    if (config) {
+      setPrecoCheio(Number(config.preco_cheio));
+      setPrecoEditando(String(config.preco_cheio));
     }
 
     setCarregando(false);

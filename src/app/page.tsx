@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import LogoMX from "@/components/LogoMX";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -44,10 +42,11 @@ export default function LoginPage() {
         return;
       }
 
+      // Navegação real (full reload) — garante que o cookie da sessão esteja disponível na próxima página
       if (perfil.papel === "gestor" || perfil.papel === "dev") {
-        router.push("/painel");
+        window.location.href = "/painel";
       } else {
-        router.push("/registrar");
+        window.location.href = "/registrar";
       }
     } catch {
       setErro("Erro inesperado. Tente novamente.");
