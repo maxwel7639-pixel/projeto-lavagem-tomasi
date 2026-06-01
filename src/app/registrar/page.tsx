@@ -50,11 +50,8 @@ export default function RegistrarPage() {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (cancelado) return;
+      // Único redirect possível: sem sessão vai para o login. Nunca redireciona por papel (evita loop).
       if (!session) { router.replace("/"); return; }
-      const { data: perfil } = await supabase
-        .from("perfis").select("papel").eq("id", session.user.id).maybeSingle();
-      if (cancelado) return;
-      if (!perfil || perfil.papel !== "lavador") { router.replace("/"); return; }
       setAutenticado(true);
     }
     checar();
