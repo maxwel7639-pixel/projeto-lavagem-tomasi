@@ -45,26 +45,20 @@ export default function RegistrarPage() {
   const inputCarretaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    let ativo = true;
-
-    async function verificar(session: import("@supabase/supabase-js").Session | null) {
-      if (!ativo) return;
+    let cancelado = false;
+    async function checar() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelado) return;
       if (!session) { router.replace("/"); return; }
-      const { data: perfil, error } = await supabase
-        .from("perfis").select("papel").eq("id", session.user.id).single();
-      if (!ativo) return;
-      if (error || !perfil) { router.replace("/"); return; }
-      // Só redireciona para o login (nunca para /painel) — evita loop entre páginas protegidas
-      if (perfil.papel !== "lavador") { router.replace("/"); return; }
+      const { data: perfil } = await supabase
+        .from("perfis").select("papel").eq("id", session.user.id).maybeSingle();
+      if (cancelado) return;
+      if (!perfil || perfil.papel !== "lavador") { router.replace("/"); return; }
       setAutenticado(true);
     }
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      verificar(session);
-    });
-
-    return () => { ativo = false; sub.subscription.unsubscribe(); };
+    checar();
+    return () => { cancelado = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

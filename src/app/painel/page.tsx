@@ -83,34 +83,25 @@ export default function PainelPage() {
   const [usuarios, setUsuarios] = useState<PerfilUsuario[]>([]);
 
   useEffect(() => {
-    const supabase = createClient();
-    let ativo = true;
-
-    async function verificar(session: import("@supabase/supabase-js").Session | null) {
-      if (!ativo) return;
+    let cancelado = false;
+    async function checar() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelado) return;
       if (!session) { router.replace("/"); return; }
-      const uid = session.user.id;
-      const { data: perfil, error } = await supabase
-        .from("perfis").select("papel, nome").eq("id", uid).single();
-      if (!ativo) return;
-      // Em caso de erro de leitura, não redireciona em loop — manda pro login
-      if (error || !perfil) { router.replace("/"); return; }
-      // Só redireciona para o login (nunca para /registrar) — evita loop entre páginas protegidas
-      if (perfil.papel !== "gestor" && perfil.papel !== "dev") {
+      const { data: perfil } = await supabase
+        .from("perfis").select("papel, nome").eq("id", session.user.id).maybeSingle();
+      if (cancelado) return;
+      if (!perfil || (perfil.papel !== "gestor" && perfil.papel !== "dev")) {
         router.replace("/"); return;
       }
-      setUserId(uid);
+      setUserId(session.user.id);
       setNomeGestor(perfil.nome ?? "Gestor");
       setIsDev(perfil.papel === "dev");
       setAutenticado(true);
     }
-
-    // onAuthStateChange dispara INITIAL_SESSION assim que o storage é resolvido
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      verificar(session);
-    });
-
-    return () => { ativo = false; sub.subscription.unsubscribe(); };
+    checar();
+    return () => { cancelado = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
