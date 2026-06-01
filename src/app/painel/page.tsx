@@ -400,16 +400,17 @@ export default function PainelPage() {
           </div>
         ) : (
           <div className="card p-0 overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-3 text-white text-xs font-bold" style={{ background: "#6D5CF5" }}>
+            <div className="grid grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-4 py-3 text-white text-xs font-bold" style={{ background: "#6D5CF5" }}>
               <span>PLACAS / DATA</span>
               <span className="hidden sm:block">LAVADOR</span>
               <span>TIPO</span>
               <span>VALOR</span>
+              <span className="sr-only">AÇÕES</span>
             </div>
             {lavagens.map((l, i) => (
               <div
                 key={l.id}
-                className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-3 items-center"
+                className="grid grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-4 py-3 items-center"
                 style={{
                   background: i % 2 === 0 ? "#0D0D12" : "#0F0F16",
                   borderTop: "1px solid #1D1D26",
@@ -430,6 +431,18 @@ export default function PainelPage() {
                 <span className="text-sm font-semibold text-[#2F9E6F]">
                   {formatarValor(calcularValor(l.escopo, precoCheio))}
                 </span>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Excluir esta lavagem?")) return;
+                    const supabase = createClient();
+                    await supabase.from("lavagens").update({ excluido: true, excluido_em: new Date().toISOString() }).eq("id", l.id);
+                    carregarDados();
+                  }}
+                  className="text-sm text-red-400 hover:text-red-300 transition-colors px-1"
+                  aria-label="Excluir lavagem"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
