@@ -44,7 +44,7 @@ export default function LoginPage() {
         return;
       }
 
-      if (perfil.papel === "gestor") {
+      if (perfil.papel === "gestor" || perfil.papel === "dev") {
         router.push("/painel");
       } else {
         router.push("/registrar");
