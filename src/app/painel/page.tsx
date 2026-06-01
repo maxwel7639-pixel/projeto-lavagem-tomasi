@@ -41,6 +41,8 @@ export default function PainelPage() {
   const [lavadorSelecionado, setLavadorSelecionado] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [nomeGestor, setNomeGestor] = useState("");
+  const [precoCheio, setPrecoCheio] = useState<number>(0);
+  const [configId, setConfigId] = useState<string>("");
 
   useEffect(() => {
     const supabase = createClient();
@@ -50,6 +52,9 @@ export default function PainelPage() {
         .from("perfis").select("papel, nome").eq("id", data.session.user.id).single();
       if (perfil?.papel !== "gestor") { router.replace("/registrar"); return; }
       setNomeGestor(perfil.nome ?? "Gestor");
+      const supabase2 = createClient();
+      const { data: config } = await supabase2.from("configuracoes").select("*").single();
+      if (config) { setPrecoCheio(config.preco_cheio); setConfigId(config.id); }
     });
   }, [router]);
 
@@ -178,6 +183,17 @@ export default function PainelPage() {
     doc.save("relatorio-lavagens-" + hoje.replace(/\//g, "-") + ".pdf");
   }
 
+  async function salvarPreco(novoPreco: number) {
+    const supabase = createClient();
+    await supabase.from("configuracoes").update({ preco_cheio: novoPreco, atualizado_em: new Date().toISOString() }).eq("id", configId);
+    setPrecoCheio(novoPreco);
+  }
+
+  function calcularValor(lavagem: LavagemComPerfil): number {
+    if (lavagem.escopo === "cavalo") return precoCheio / 2;
+    return precoCheio;
+  }
+
   async function sair() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -248,6 +264,36 @@ export default function PainelPage() {
               </select>
             </div>
           </div>
+        </div>
+
+        {/* Configuração de preço */}
+        <div className="card space-y-3">
+          <p className="section-label">PREÇO POR LAVAGEM</p>
+          <div className="flex items-center gap-3">
+            <span className="text-mx-muted text-sm">R$</span>
+            <input
+              type="number"
+              value={precoCheio}
+              onChange={e => setPrecoCheio(Number(e.target.value))}
+              className="input-field text-sm w-32"
+              placeholder="0,00"
+            />
+            <button
+              onClick={() => salvarPreco(precoCheio)}
+              className="btn-primary text-sm py-2 px-4"
+            >
+              Salvar
+            </button>
+          </div>
+          <p className="text-xs text-mx-muted">Cavalo sozinho = metade do preço (R$ {(precoCheio / 2).toFixed(2)})</p>
+        </div>
+
+        {/* Total a receber */}
+        <div className="card text-center py-4">
+          <p className="text-3xl font-bold text-green-400">
+            R$ {lavagens.reduce((acc, l) => acc + calcularValor(l), 0).toFixed(2)}
+          </p>
+          <p className="section-label mt-1">TOTAL A RECEBER</p>
         </div>
 
         {/* Resumo */}
