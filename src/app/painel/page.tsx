@@ -95,8 +95,9 @@ export default function PainelPage() {
       if (!ativo) return;
       // Em caso de erro de leitura, não redireciona em loop — manda pro login
       if (error || !perfil) { router.replace("/"); return; }
+      // Só redireciona para o login (nunca para /registrar) — evita loop entre páginas protegidas
       if (perfil.papel !== "gestor" && perfil.papel !== "dev") {
-        router.replace("/registrar"); return;
+        router.replace("/"); return;
       }
       setUserId(uid);
       setNomeGestor(perfil.nome ?? "Gestor");

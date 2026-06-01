@@ -55,7 +55,7 @@ export default function RegistrarPage() {
         .from("perfis").select("papel").eq("id", session.user.id).single();
       if (!ativo) return;
       if (error || !perfil) { router.replace("/"); return; }
-      if (perfil.papel === "gestor" || perfil.papel === "dev") { router.replace("/painel"); return; }
+      // Só redireciona para o login (nunca para /painel) — evita loop entre páginas protegidas
       if (perfil.papel !== "lavador") { router.replace("/"); return; }
       setAutenticado(true);
     }
