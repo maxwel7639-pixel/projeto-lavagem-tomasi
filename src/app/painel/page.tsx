@@ -39,8 +39,11 @@ function mesParaLabel(valor: string) {
   return d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
 }
 
-function calcularValor(escopo: string | null | undefined, precoCheio: number): number {
+function calcularValor(lavagem: { escopo: string | null; placa_carreta_2?: string | null }, precoCheio: number): number {
+  const { escopo } = lavagem;
   if (escopo === "cavalo" || escopo === "carreta") return precoCheio / 2;
+  // Rodotrem: 2x o preço cheio quando a 2ª carreta já foi lavada; senão preço cheio (1ª parte)
+  if (escopo === "rodotrem") return lavagem.placa_carreta_2 ? precoCheio * 2 : precoCheio;
   return precoCheio; // ambos e truck = preço cheio
 }
 
@@ -199,7 +202,7 @@ export default function PainelPage() {
     doc.text("Emitido em " + hoje + "  ·  Lava-Jato Tomasi", 14, 38);
 
     const total = lista.length;
-    const totalReceber = lista.reduce((s, x) => s + calcularValor(x.escopo, precoCheio), 0);
+    const totalReceber = lista.reduce((s, x) => s + calcularValor(x, precoCheio), 0);
     const nBau = lista.filter((x) => x.tipo === "bau").length;
     const cardY = 48, cardH = 20, gap = 4;
     const cardW = (W - 28 - gap * 3) / 4;
@@ -227,11 +230,11 @@ export default function PainelPage() {
     const linhas = lista.map((x) => [
       formatarData(x.data_hora),
       x.placa_cavalo || "-",
-      x.placa_carreta || "-",
+      [x.placa_carreta, x.placa_carreta_2].filter(Boolean).join(" / ") || "-",
       x.tipo === "bau" ? "Bau" : "Sider",
-      x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : "Ambos",
+      x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : x.escopo === "truck" ? "Truck" : x.escopo === "rodotrem" ? "Rodotrem" : "Ambos",
       x.perfis?.nome || "-",
-      formatarValor(calcularValor(x.escopo, precoCheio)),
+      formatarValor(calcularValor(x, precoCheio)),
     ]);
 
     autoTable(doc, {
@@ -264,7 +267,7 @@ export default function PainelPage() {
   const totalMes = lavagens.length;
   const totalBau = lavagens.filter(l => l.tipo === "bau").length;
   const totalSider = lavagens.filter(l => l.tipo === "sider").length;
-  const totalReceber = lavagens.reduce((s, l) => s + calcularValor(l.escopo, precoCheio), 0);
+  const totalReceber = lavagens.reduce((s, l) => s + calcularValor(l, precoCheio), 0);
 
   const mesesOpcoes = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
@@ -421,6 +424,12 @@ export default function PainelPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-bold text-white text-sm">{l.placa_cavalo || "—"}</span>
                     {l.placa_carreta && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta}</span></>}
+                    {l.placa_carreta_2 && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta_2}</span></>}
+                    {l.escopo === "rodotrem" && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "rgba(109,92,245,0.18)", color: "#8B7CF8", border: "1px solid rgba(109,92,245,0.35)" }}>
+                        {l.placa_carreta_2 ? "Rodotrem" : "Rodotrem (falta 2ª carreta)"}
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-mx-muted mt-0.5">{formatarData(l.data_hora)}</p>
                   <p className="text-xs text-mx-muted sm:hidden">{l.perfis?.nome ?? "—"}</p>
@@ -432,7 +441,7 @@ export default function PainelPage() {
                 {!isDev && (
                   <div className="flex flex-col items-end gap-0.5">
                     <span className="text-sm font-semibold text-[#2F9E6F]">
-                      {formatarValor(calcularValor(l.escopo, precoCheio))}
+                      {formatarValor(calcularValor(l, precoCheio))}
                     </span>
                     {(l.escopo === "cavalo" || l.escopo === "carreta") && (
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.3)" }}>
