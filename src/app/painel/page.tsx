@@ -70,6 +70,7 @@ export default function PainelPage() {
   const [nomeGestor, setNomeGestor] = useState("");
   const [isDev, setIsDev] = useState(false);
   const [userId, setUserId] = useState("");
+  const [autenticado, setAutenticado] = useState(false);
 
   // Preço
   const [precoCheio, setPrecoCheio] = useState(0);
@@ -94,6 +95,7 @@ export default function PainelPage() {
       }
       setNomeGestor(perfil.nome ?? "Gestor");
       setIsDev(perfil.papel === "dev");
+      setAutenticado(true);
     });
   }, [router]);
 
@@ -141,7 +143,7 @@ export default function PainelPage() {
     setCarregando(false);
   }, [mesSelecionado, lavadorSelecionado]);
 
-  useEffect(() => { carregarDados(); }, [carregarDados]);
+  useEffect(() => { if (autenticado) carregarDados(); }, [autenticado, carregarDados]);
 
   async function salvarPreco() {
     const valor = parseFloat(precoEditando.replace(",", "."));
@@ -264,6 +266,10 @@ export default function PainelPage() {
   });
 
   const manutencao = statusManutencao();
+
+  if (!autenticado) {
+    return <div className="min-h-screen bg-mx-bg" />;
+  }
 
   return (
     <div className="min-h-screen bg-mx-bg relative">
