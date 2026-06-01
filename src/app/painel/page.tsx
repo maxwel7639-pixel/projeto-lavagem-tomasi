@@ -40,8 +40,7 @@ function mesParaLabel(valor: string) {
 }
 
 function calcularValor(escopo: string | null | undefined, precoCheio: number): number {
-  if (!escopo || escopo === "ambos" || escopo === "carreta") return precoCheio;
-  if (escopo === "cavalo") return precoCheio / 2;
+  if (escopo === "cavalo" || escopo === "carreta") return precoCheio / 2;
   return precoCheio;
 }
 
@@ -435,9 +434,9 @@ export default function PainelPage() {
                     <span className="text-sm font-semibold text-[#2F9E6F]">
                       {formatarValor(calcularValor(l.escopo, precoCheio))}
                     </span>
-                    {l.escopo === "cavalo" && (
+                    {(l.escopo === "cavalo" || l.escopo === "carreta") && (
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.3)" }}>
-                        ½ cavalo
+                        ½ {l.escopo}
                       </span>
                     )}
                   </div>
