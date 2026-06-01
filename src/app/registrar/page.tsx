@@ -48,10 +48,9 @@ export default function RegistrarPage() {
     let cancelado = false;
     async function checar() {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.auth.getSession();
       if (cancelado) return;
-      // Único redirect possível: sem sessão vai para o login. Nunca redireciona por papel (evita loop).
-      if (!session) { router.replace("/"); return; }
+      // NÃO redireciona aqui — evita qualquer piscar. O RLS protege os dados.
       setAutenticado(true);
     }
     checar();

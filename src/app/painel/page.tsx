@@ -88,15 +88,16 @@ export default function PainelPage() {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (cancelado) return;
-      // Único redirect possível: sem sessão vai para o login. Nunca redireciona por papel (evita loop).
-      if (!session) { router.replace("/"); return; }
-      setUserId(session.user.id);
-      const { data: perfil } = await supabase
-        .from("perfis").select("papel, nome").eq("id", session.user.id).maybeSingle();
-      if (cancelado) return;
-      if (perfil) {
-        setNomeGestor(perfil.nome ?? "Gestor");
-        setIsDev(perfil.papel === "dev");
+      // NÃO redireciona aqui — evita qualquer piscar. O RLS protege os dados.
+      if (session) {
+        setUserId(session.user.id);
+        const { data: perfil } = await supabase
+          .from("perfis").select("papel, nome").eq("id", session.user.id).maybeSingle();
+        if (cancelado) return;
+        if (perfil) {
+          setNomeGestor(perfil.nome ?? "Gestor");
+          setIsDev(perfil.papel === "dev");
+        }
       }
       setAutenticado(true);
     }
