@@ -40,6 +40,7 @@ export default function RegistrarPage() {
   const [placaCarreta, setPlacaCarreta] = useState("");
   const [tipo, setTipo] = useState<"bau" | "sider" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [autenticado, setAutenticado] = useState(false);
   const inputCavaloRef = useRef<HTMLInputElement>(null);
   const inputCarretaRef = useRef<HTMLInputElement>(null);
 
@@ -49,7 +50,9 @@ export default function RegistrarPage() {
       if (!data.session) { router.replace("/"); return; }
       const { data: perfil } = await supabase
         .from("perfis").select("papel").eq("id", data.session.user.id).single();
-      if (perfil?.papel !== "lavador") router.replace("/painel");
+      if (perfil?.papel === "gestor" || perfil?.papel === "dev") { router.replace("/painel"); return; }
+      if (perfil?.papel !== "lavador") { router.replace("/"); return; }
+      setAutenticado(true);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -162,6 +165,8 @@ export default function RegistrarPage() {
     await supabase.auth.signOut();
     router.replace("/");
   }
+
+  if (!autenticado) return <div className="min-h-screen bg-mx-bg" />;
 
   return (
     <div className="min-h-screen bg-mx-bg relative">
