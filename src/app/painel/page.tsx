@@ -431,9 +431,16 @@ export default function PainelPage() {
                   {l.tipo === "bau" ? "Baú" : "Sider"}
                 </span>
                 {!isDev && (
-                  <span className="text-sm font-semibold text-[#2F9E6F]">
-                    {formatarValor(calcularValor(l.escopo, precoCheio))}
-                  </span>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-sm font-semibold text-[#2F9E6F]">
+                      {formatarValor(calcularValor(l.escopo, precoCheio))}
+                    </span>
+                    {l.escopo === "cavalo" && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.3)" }}>
+                        ½ cavalo
+                      </span>
+                    )}
+                  </div>
                 )}
                 <button
                   onClick={async () => {
