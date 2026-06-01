@@ -97,18 +97,6 @@ export default function PainelPage() {
     });
   }, [router]);
 
-  // Carrega preço
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.from("configuracoes").select("preco_cheio").order("atualizado_em", { ascending: false }).limit(1).single()
-      .then(({ data }) => {
-        if (data) {
-          setPrecoCheio(Number(data.preco_cheio));
-          setPrecoEditando(String(data.preco_cheio));
-        }
-      });
-  }, []);
-
   // Carrega dados dev
   useEffect(() => {
     if (!isDev) return;
@@ -142,6 +130,14 @@ export default function PainelPage() {
     const { data: lavadoresData } = await supabase
       .from("perfis").select("id, nome").eq("papel", "lavador").order("nome");
     setLavadores(lavadoresData ?? []);
+
+    const { data: configData } = await supabase
+      .from("configuracoes").select("preco_cheio").order("atualizado_em", { ascending: false }).limit(1).single();
+    if (configData) {
+      setPrecoCheio(Number(configData.preco_cheio));
+      setPrecoEditando(String(configData.preco_cheio));
+    }
+
     setCarregando(false);
   }, [mesSelecionado, lavadorSelecionado]);
 
