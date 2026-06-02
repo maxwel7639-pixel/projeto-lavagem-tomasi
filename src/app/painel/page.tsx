@@ -70,9 +70,15 @@ export default function PainelPage() {
   const [lavadorSelecionado, setLavadorSelecionado] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [nomeGestor, setNomeGestor] = useState("");
-  const [isDev, setIsDev] = useState(false);
+  const [papel, setPapel] = useState("");
   const [userId, setUserId] = useState("");
   const [autenticado, setAutenticado] = useState(false);
+
+  const isDev = papel === "dev";
+  const isOperacional = papel === "operacional";
+  const isGestorLeitura = papel === "gestor_leitura";
+  const mostraValores = papel === "gestor" || papel === "gestor_leitura";
+  const podeEditar = papel === "gestor" || papel === "dev";
 
   // Preço
   const [precoCheio, setPrecoCheio] = useState(0);
@@ -97,8 +103,8 @@ export default function PainelPage() {
           .from("perfis").select("papel, nome").eq("id", session.user.id).maybeSingle();
         if (cancelado) return;
         if (perfil) {
-          setNomeGestor(perfil.nome ?? "Gestor");
-          setIsDev(perfil.papel === "dev");
+          setNomeGestor(perfil.nome ?? "");
+          setPapel(perfil.papel ?? "");
         }
       }
       setAutenticado(true);
@@ -119,7 +125,7 @@ export default function PainelPage() {
         setTotalUsuarios(count ?? (data?.length ?? 0));
         setUsuarios((data as PerfilUsuario[]) ?? []);
       });
-  }, [isDev]);
+  }, [isDev]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const carregarDados = useCallback(async () => {
     setCarregando(true);
@@ -128,11 +134,18 @@ export default function PainelPage() {
     const inicio = new Date(ano, mes - 1, 1).toISOString();
     const fim = new Date(ano, mes, 1).toISOString();
 
+    // Busca o papel atual do usuário para decidir filtro de is_teste
+    const { data: perfilAtual } = await supabase
+      .from("perfis").select("papel").eq("id", userId).maybeSingle();
+    const papelAtual = perfilAtual?.papel ?? papel;
+    const ocultarTestes = papelAtual === "gestor" || papelAtual === "gestor_leitura";
+
     let query = supabase
       .from("lavagens").select("*, perfis(nome)")
       .gte("data_hora", inicio).lt("data_hora", fim).eq("excluido", false)
       .order("data_hora", { ascending: false });
 
+    if (ocultarTestes) query = query.eq("is_teste", false);
     if (lavadorSelecionado) query = query.eq("registrado_por", lavadorSelecionado);
 
     const { data } = await query;
@@ -151,7 +164,7 @@ export default function PainelPage() {
     }
 
     setCarregando(false);
-  }, [mesSelecionado, lavadorSelecionado]);
+  }, [mesSelecionado, lavadorSelecionado, userId, papel]);
 
   useEffect(() => { if (autenticado) carregarDados(); }, [autenticado, carregarDados]);
 
@@ -202,44 +215,75 @@ export default function PainelPage() {
     doc.text("Emitido em " + hoje + "  ·  Lava-Jato Tomasi", 14, 38);
 
     const total = lista.length;
-    const totalReceber = lista.reduce((s, x) => s + calcularValor(x, precoCheio), 0);
     const nBau = lista.filter((x) => x.tipo === "bau").length;
     const cardY = 48, cardH = 20, gap = 4;
-    const cardW = (W - 28 - gap * 3) / 4;
-    const cards: { n: string; l: string; c: [number, number, number] }[] = [
-      { n: String(total), l: "TOTAL LAVAGENS", c: roxo },
-      { n: String(nBau), l: "BAU", c: roxo },
-      { n: String(lista.length - nBau), l: "SIDER", c: [47, 158, 111] },
-      { n: formatarValor(totalReceber), l: "TOTAL A RECEBER", c: [47, 158, 111] },
-    ];
-    cards.forEach((card, i) => {
-      const x = 14 + i * (cardW + gap);
-      doc.setDrawColor(230, 228, 242);
-      doc.setFillColor(246, 245, 253);
-      doc.roundedRect(x, cardY, cardW, cardH, 2.5, 2.5, "FD");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.setTextColor(card.c[0], card.c[1], card.c[2]);
-      doc.text(String(card.n), x + 4, cardY + 10);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(6);
-      doc.setTextColor(108, 108, 122);
-      doc.text(card.l, x + 4, cardY + 16);
+
+    if (mostraValores) {
+      const totalReceber = lista.reduce((s, x) => s + calcularValor(x, precoCheio), 0);
+      const cardW = (W - 28 - gap * 3) / 4;
+      const cards: { n: string; l: string; c: [number, number, number] }[] = [
+        { n: String(total), l: "TOTAL LAVAGENS", c: roxo },
+        { n: String(nBau), l: "BAU", c: roxo },
+        { n: String(lista.length - nBau), l: "SIDER", c: [47, 158, 111] },
+        { n: formatarValor(totalReceber), l: "TOTAL A RECEBER", c: [47, 158, 111] },
+      ];
+      cards.forEach((card, i) => {
+        const x = 14 + i * (cardW + gap);
+        doc.setDrawColor(230, 228, 242);
+        doc.setFillColor(246, 245, 253);
+        doc.roundedRect(x, cardY, cardW, cardH, 2.5, 2.5, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(card.c[0], card.c[1], card.c[2]);
+        doc.text(String(card.n), x + 4, cardY + 10);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6);
+        doc.setTextColor(108, 108, 122);
+        doc.text(card.l, x + 4, cardY + 16);
+      });
+    } else {
+      const cardW = (W - 28 - gap * 2) / 3;
+      const cards: { n: string; l: string; c: [number, number, number] }[] = [
+        { n: String(total), l: "TOTAL LAVAGENS", c: roxo },
+        { n: String(nBau), l: "BAU", c: roxo },
+        { n: String(lista.length - nBau), l: "SIDER", c: [47, 158, 111] },
+      ];
+      cards.forEach((card, i) => {
+        const x = 14 + i * (cardW + gap);
+        doc.setDrawColor(230, 228, 242);
+        doc.setFillColor(246, 245, 253);
+        doc.roundedRect(x, cardY, cardW, cardH, 2.5, 2.5, "FD");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(card.c[0], card.c[1], card.c[2]);
+        doc.text(String(card.n), x + 4, cardY + 10);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(6);
+        doc.setTextColor(108, 108, 122);
+        doc.text(card.l, x + 4, cardY + 16);
+      });
+    }
+
+    const linhas = lista.map((x) => {
+      const base = [
+        formatarData(x.data_hora),
+        x.placa_cavalo || "-",
+        [x.placa_carreta, x.placa_carreta_2].filter(Boolean).join(" / ") || "-",
+        x.tipo === "bau" ? "Bau" : x.tipo === "sider" ? "Sider" : "-",
+        x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : x.escopo === "truck" ? "Truck" : x.escopo === "rodotrem" ? "Rodotrem" : "Ambos",
+        x.perfis?.nome || "-",
+      ];
+      if (mostraValores) base.push(formatarValor(calcularValor(x, precoCheio)));
+      return base;
     });
 
-    const linhas = lista.map((x) => [
-      formatarData(x.data_hora),
-      x.placa_cavalo || "-",
-      [x.placa_carreta, x.placa_carreta_2].filter(Boolean).join(" / ") || "-",
-      x.tipo === "bau" ? "Bau" : x.tipo === "sider" ? "Sider" : "-",
-      x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : x.escopo === "truck" ? "Truck" : x.escopo === "rodotrem" ? "Rodotrem" : "Ambos",
-      x.perfis?.nome || "-",
-      formatarValor(calcularValor(x, precoCheio)),
-    ]);
+    const head = mostraValores
+      ? [["Data / Hora", "Cavalo", "Carreta", "Tipo", "Escopo", "Lavador", "Valor"]]
+      : [["Data / Hora", "Cavalo", "Carreta", "Tipo", "Escopo", "Lavador"]];
 
     autoTable(doc, {
       startY: cardY + cardH + 8,
-      head: [["Data / Hora", "Cavalo", "Carreta", "Tipo", "Escopo", "Lavador", "Valor"]],
+      head,
       body: linhas,
       theme: "striped",
       headStyles: { fillColor: roxo, textColor: 255, fontStyle: "bold", fontSize: 8 },
@@ -299,12 +343,15 @@ export default function PainelPage() {
       <main className="relative z-10 max-w-2xl mx-auto p-4 space-y-5">
         <div className="pt-2">
           <h1 className="text-2xl font-bold text-white">
-            Painel do <em className="not-italic text-[#8B7CF8]">{isDev ? "Dev" : "Gestor"}</em>
+            Painel{" "}
+            <em className="not-italic text-[#8B7CF8]">
+              {isDev ? "Dev" : isOperacional ? "Operacional" : isGestorLeitura ? "Leitura" : "Gestor"}
+            </em>
           </h1>
         </div>
 
-        {/* Preço por lavagem — só gestor */}
-        {!isDev && <div className="card space-y-3">
+        {/* Preço por lavagem — só gestor João */}
+        {papel === "gestor" && <div className="card space-y-3">
           <p className="section-label">Configuração de Preço</p>
           <div className="flex items-center gap-3">
             <label className="text-sm text-mx-soft whitespace-nowrap">Preço por lavagem:</label>
@@ -375,7 +422,7 @@ export default function PainelPage() {
               <p className="section-label mt-1">{l}</p>
             </div>
           ))}
-          {!isDev && (
+          {mostraValores && (
             <div className="card text-center py-4 col-span-2 sm:col-span-1" style={{ border: "1px solid rgba(47,158,111,0.4)" }}>
               <p className="text-2xl font-bold text-[#2F9E6F]">{formatarValor(totalReceber)}</p>
               <p className="section-label mt-1">A RECEBER</p>
@@ -395,7 +442,7 @@ export default function PainelPage() {
           Folha de Higienização
         </a>
 
-        {/* Exportar PDF — somente gestor (João) */}
+        {/* Exportar PDF — gestor, gestor_leitura e operacional (sem valores para operacional) */}
         {!isDev && (
           <button
             onClick={exportarPDF}
@@ -418,17 +465,17 @@ export default function PainelPage() {
           </div>
         ) : (
           <div className="card p-0 overflow-hidden">
-            <div className={`grid ${isDev ? "grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto_auto]"} gap-3 px-4 py-3 text-white text-xs font-bold`} style={{ background: "#6D5CF5" }}>
+            <div className={`grid ${mostraValores && podeEditar ? "grid-cols-[1fr_auto_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto_auto]" : mostraValores || podeEditar ? "grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_auto_auto_auto]"} gap-3 px-4 py-3 text-white text-xs font-bold`} style={{ background: "#6D5CF5" }}>
               <span>PLACAS / DATA</span>
               <span className="hidden sm:block">LAVADOR</span>
               <span>TIPO</span>
-              {!isDev && <span>VALOR</span>}
-              <span className="sr-only">AÇÕES</span>
+              {mostraValores && <span>VALOR</span>}
+              {podeEditar && <span className="sr-only">AÇÕES</span>}
             </div>
             {lavagens.map((l, i) => (
               <div
                 key={l.id}
-                className={`grid ${isDev ? "grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto_auto]"} gap-3 px-4 py-3 items-center`}
+                className={`grid ${mostraValores && podeEditar ? "grid-cols-[1fr_auto_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto_auto]" : mostraValores || podeEditar ? "grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_auto_auto_auto]"} gap-3 px-4 py-3 items-center`}
                 style={{
                   background: i % 2 === 0 ? "#0D0D12" : "#0F0F16",
                   borderTop: "1px solid #1D1D26",
@@ -452,7 +499,7 @@ export default function PainelPage() {
                 <span className={l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
                   {l.escopo === "truck" ? (l.tipo === "bau" ? "T.Baú" : "T.Sider") : (l.tipo === "bau" ? "Baú" : "Sider")}
                 </span>
-                {!isDev && (
+                {mostraValores && (
                   <div className="flex flex-col items-end gap-0.5">
                     <span className="text-sm font-semibold text-[#2F9E6F]">
                       {formatarValor(calcularValor(l, precoCheio))}
@@ -464,18 +511,20 @@ export default function PainelPage() {
                     )}
                   </div>
                 )}
-                <button
-                  onClick={async () => {
-                    if (!confirm("Excluir esta lavagem?")) return;
-                    const supabase = createClient();
-                    await supabase.from("lavagens").update({ excluido: true, excluido_em: new Date().toISOString() }).eq("id", l.id);
-                    carregarDados();
-                  }}
-                  className="text-sm text-red-400 hover:text-red-300 transition-colors px-1"
-                  aria-label="Excluir lavagem"
-                >
-                  ✕
-                </button>
+                {podeEditar && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm("Excluir esta lavagem?")) return;
+                      const supabase = createClient();
+                      await supabase.from("lavagens").update({ excluido: true, excluido_em: new Date().toISOString() }).eq("id", l.id);
+                      carregarDados();
+                    }}
+                    className="text-sm text-red-400 hover:text-red-300 transition-colors px-1"
+                    aria-label="Excluir lavagem"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             ))}
           </div>
