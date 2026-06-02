@@ -236,6 +236,22 @@ export default function RegistrarPage() {
             <button onClick={() => setEtapa("foto-cavalo")} className="btn-primary w-full text-lg py-4">
               Iniciar Registro
             </button>
+
+            {/* Cards de resumo */}
+            {lavagens.length > 0 && (
+              <div className="grid grid-cols-3 gap-3 text-center">
+                {[
+                  { n: lavagens.length, l: "TOTAL" },
+                  { n: lavagens.filter(l => l.tipo === "bau").length, l: "BAÚ" },
+                  { n: lavagens.filter(l => l.tipo === "sider").length, l: "SIDER" },
+                ].map(({ n, l }) => (
+                  <div key={l} className="card py-4">
+                    <p className="text-3xl font-bold text-[#8B7CF8]">{n}</p>
+                    <p className="text-[10px] font-semibold tracking-widest text-mx-muted mt-1">{l}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
