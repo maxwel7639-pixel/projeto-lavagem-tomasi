@@ -40,6 +40,7 @@ export default function FolhaHigienizacao() {
   const [lavagens, setLavagens] = useState<LavagemFolha[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [autenticado, setAutenticado] = useState(false);
+  const [isGestor, setIsGestor] = useState(false);
   const [salvando, setSalvando] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,6 +60,7 @@ export default function FolhaHigienizacao() {
         window.location.href = "/";
         return;
       }
+      setIsGestor(perfil.papel === "gestor");
       setAutenticado(true);
     }
     checar();
@@ -191,12 +193,14 @@ export default function FolhaHigienizacao() {
             >
               {anos.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
-            <button
-              onClick={exportarPDF}
-              style={{ background: "#6D5CF5", color: "#fff", border: "none", borderRadius: 6, padding: "7px 16px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}
-            >
-              Exportar PDF
-            </button>
+            {isGestor && (
+              <button
+                onClick={exportarPDF}
+                style={{ background: "#6D5CF5", color: "#fff", border: "none", borderRadius: 6, padding: "7px 16px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}
+              >
+                Exportar PDF
+              </button>
+            )}
             <a
               href="/painel"
               style={{ background: "#1a1a2e", color: "#aaa", border: "1px solid #333", borderRadius: 6, padding: "7px 16px", fontSize: 13, textDecoration: "none" }}
@@ -240,18 +244,18 @@ export default function FolhaHigienizacao() {
                       <input
                         type="checkbox"
                         checked={l.completo}
-                        disabled={salvando === l.id + "_completo"}
-                        onChange={e => toggleCompleto(l.id, e.target.checked)}
-                        style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#6D5CF5" }}
+                        disabled={!isGestor || salvando === l.id + "_completo"}
+                        onChange={e => isGestor && toggleCompleto(l.id, e.target.checked)}
+                        style={{ width: 16, height: 16, cursor: isGestor ? "pointer" : "default", accentColor: "#6D5CF5" }}
                       />
                     </td>
                     <td style={{ padding: "9px 10px", borderBottom: "1px solid #1e1e30", textAlign: "center" }}>
                       <input
                         type="checkbox"
                         checked={l.confirmado_joao}
-                        disabled={salvando === l.id + "_conf"}
-                        onChange={e => toggleConfirmado(l.id, e.target.checked)}
-                        style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#22c55e" }}
+                        disabled={!isGestor || salvando === l.id + "_conf"}
+                        onChange={e => isGestor && toggleConfirmado(l.id, e.target.checked)}
+                        style={{ width: 16, height: 16, cursor: isGestor ? "pointer" : "default", accentColor: "#22c55e" }}
                       />
                     </td>
                   </tr>
