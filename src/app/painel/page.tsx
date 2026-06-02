@@ -41,10 +41,9 @@ function mesParaLabel(valor: string) {
 
 function calcularValor(lavagem: { escopo: string | null; placa_carreta_2?: string | null }, precoCheio: number): number {
   const { escopo } = lavagem;
-  if (escopo === "cavalo" || escopo === "carreta") return precoCheio / 2;
-  // Rodotrem: 2x o preço cheio quando a 2ª carreta já foi lavada; senão preço cheio (1ª parte)
+  if (escopo === "cavalo") return precoCheio / 2;
   if (escopo === "rodotrem") return lavagem.placa_carreta_2 ? precoCheio * 2 : precoCheio;
-  return precoCheio; // ambos e truck = preço cheio
+  return precoCheio; // carreta, ambos, truck = preço cheio
 }
 
 function formatarValor(v: number) {
@@ -410,8 +409,8 @@ export default function PainelPage() {
           </div>
         </div>
 
-        {/* Resumo com Total a Receber */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Resumo — só contagens, valores apenas no PDF */}
+        <div className="grid grid-cols-3 gap-3">
           {[
             { n: totalMes, l: "TOTAL" },
             { n: totalBau, l: "BAÚ" },
@@ -422,12 +421,6 @@ export default function PainelPage() {
               <p className="section-label mt-1">{l}</p>
             </div>
           ))}
-          {mostraValores && (
-            <div className="card text-center py-4 col-span-2 sm:col-span-1" style={{ border: "1px solid rgba(47,158,111,0.4)" }}>
-              <p className="text-2xl font-bold text-[#2F9E6F]">{formatarValor(totalReceber)}</p>
-              <p className="section-label mt-1">A RECEBER</p>
-            </div>
-          )}
         </div>
 
         {/* Folha de Higienização */}
@@ -465,17 +458,16 @@ export default function PainelPage() {
           </div>
         ) : (
           <div className="card p-0 overflow-hidden">
-            <div className={`grid ${mostraValores && podeEditar ? "grid-cols-[1fr_auto_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto_auto]" : mostraValores || podeEditar ? "grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_auto_auto_auto]"} gap-3 px-4 py-3 text-white text-xs font-bold`} style={{ background: "#6D5CF5" }}>
+            <div className={`grid ${podeEditar ? "grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_auto_auto_auto]"} gap-3 px-4 py-3 text-white text-xs font-bold`} style={{ background: "#6D5CF5" }}>
               <span>PLACAS / DATA</span>
               <span className="hidden sm:block">LAVADOR</span>
               <span>TIPO</span>
-              {mostraValores && <span>VALOR</span>}
               {podeEditar && <span className="sr-only">AÇÕES</span>}
             </div>
             {lavagens.map((l, i) => (
               <div
                 key={l.id}
-                className={`grid ${mostraValores && podeEditar ? "grid-cols-[1fr_auto_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto_auto]" : mostraValores || podeEditar ? "grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_auto_auto_auto]"} gap-3 px-4 py-3 items-center`}
+                className={`grid ${podeEditar ? "grid-cols-[1fr_auto_auto_auto] sm:grid-cols-[1fr_auto_auto_auto_auto]" : "grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_auto_auto_auto]"} gap-3 px-4 py-3 items-center`}
                 style={{
                   background: i % 2 === 0 ? "#0D0D12" : "#0F0F16",
                   borderTop: "1px solid #1D1D26",
@@ -499,18 +491,6 @@ export default function PainelPage() {
                 <span className={l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
                   {l.escopo === "truck" ? (l.tipo === "bau" ? "T.Baú" : "T.Sider") : (l.tipo === "bau" ? "Baú" : "Sider")}
                 </span>
-                {mostraValores && (
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className="text-sm font-semibold text-[#2F9E6F]">
-                      {formatarValor(calcularValor(l, precoCheio))}
-                    </span>
-                    {(l.escopo === "cavalo" || l.escopo === "carreta") && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24", border: "1px solid rgba(251,191,36,0.3)" }}>
-                        ½ {l.escopo}
-                      </span>
-                    )}
-                  </div>
-                )}
                 {podeEditar && (
                   <button
                     onClick={async () => {
