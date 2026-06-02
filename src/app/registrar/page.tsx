@@ -80,10 +80,9 @@ export default function RegistrarPage() {
     const { data } = await supabase
       .from("lavagens")
       .select("id, data_hora, placa_cavalo, placa_carreta, placa_carreta_2, tipo, escopo")
-      .eq("registrado_por", userId)
       .eq("excluido", false)
       .order("data_hora", { ascending: false })
-      .limit(30);
+      .limit(50);
     setLavagens((data as LavagemPropria[]) ?? []);
   }, [userId]);
 
