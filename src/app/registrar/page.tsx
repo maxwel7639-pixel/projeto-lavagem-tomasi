@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import ChatLavagem from "@/components/ChatLavagem";
 import LogoMX from "@/components/LogoMX";
 
 type Etapa = "inicio" | "foto-cavalo" | "foto-carreta" | "processando" | "confirmacao" | "salvando" | "sucesso";
+
+interface LavagemPropria {
+  id: string;
+  data_hora: string;
+  placa_cavalo: string;
+  placa_carreta: string | null;
+  placa_carreta_2: string | null;
+  tipo: "bau" | "sider";
+  escopo: string | null;
+}
 
 function Spinner({ className = "h-5 w-5" }: { className?: string }) {
   return (
@@ -29,6 +39,10 @@ function fileParaBase64(file: File): Promise<string> {
   });
 }
 
+function formatarData(iso: string) {
+  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
 export default function RegistrarPage() {
   const router = useRouter();
   const [etapa, setEtapa] = useState<Etapa>("inicio");
@@ -41,6 +55,8 @@ export default function RegistrarPage() {
   const [tipo, setTipo] = useState<"bau" | "sider" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [autenticado, setAutenticado] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [lavagens, setLavagens] = useState<LavagemPropria[]>([]);
   const inputCavaloRef = useRef<HTMLInputElement>(null);
   const inputCarretaRef = useRef<HTMLInputElement>(null);
 
@@ -48,14 +64,30 @@ export default function RegistrarPage() {
     let cancelado = false;
     async function checar() {
       const supabase = createClient();
-      await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (cancelado) return;
+      if (session) setUserId(session.user.id);
       setAutenticado(true);
     }
     checar();
     return () => { cancelado = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const carregarLavagens = useCallback(async () => {
+    if (!userId) return;
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("lavagens")
+      .select("id, data_hora, placa_cavalo, placa_carreta, placa_carreta_2, tipo, escopo")
+      .eq("registrado_por", userId)
+      .eq("excluido", false)
+      .order("data_hora", { ascending: false })
+      .limit(30);
+    setLavagens((data as LavagemPropria[]) ?? []);
+  }, [userId]);
+
+  useEffect(() => { carregarLavagens(); }, [carregarLavagens]);
 
   function handleFotoCavalo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -385,9 +417,40 @@ export default function RegistrarPage() {
                 </span>
               </p>
             </div>
-            <button onClick={reiniciar} className="btn-primary w-full text-lg py-4">
+            <button onClick={() => { reiniciar(); carregarLavagens(); }} className="btn-primary w-full text-lg py-4">
               Nova Lavagem
             </button>
+          </div>
+        )}
+
+        {/* Lista de lavagens do lavador — visível na tela inicial */}
+        {etapa === "inicio" && lavagens.length > 0 && (
+          <div className="card p-0 overflow-hidden">
+            <div className="px-4 py-3" style={{ background: "#6D5CF5" }}>
+              <p className="text-white text-xs font-bold">MINHAS LAVAGENS</p>
+            </div>
+            {lavagens.map((l, i) => (
+              <div
+                key={l.id}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+                style={{ background: i % 2 === 0 ? "#0D0D12" : "#0F0F16", borderTop: "1px solid #1D1D26" }}
+              >
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono font-bold text-white text-sm">{l.placa_cavalo || "—"}</span>
+                    {l.placa_carreta && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta}</span></>}
+                    {l.placa_carreta_2 && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta_2}</span></>}
+                    {l.escopo === "rodotrem" && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "rgba(109,92,245,0.18)", color: "#8B7CF8", border: "1px solid rgba(109,92,245,0.35)" }}>Rodotrem</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-mx-muted mt-0.5">{formatarData(l.data_hora)}</p>
+                </div>
+                <span className={l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
+                  {l.escopo === "truck" ? (l.tipo === "bau" ? "T.Baú" : "T.Sider") : (l.tipo === "bau" ? "Baú" : "Sider")}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </main>
