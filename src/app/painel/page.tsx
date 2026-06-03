@@ -488,8 +488,8 @@ export default function PainelPage() {
                   <p className="text-xs text-mx-muted sm:hidden">{l.perfis?.nome ?? "—"}</p>
                 </div>
                 <span className="text-xs text-mx-muted hidden sm:block">{l.perfis?.nome ?? "—"}</span>
-                <span className={l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
-                  {l.escopo === "truck" ? (l.tipo === "bau" ? "T.Baú" : "T.Sider") : (l.tipo === "bau" ? "Baú" : "Sider")}
+                <span className={l.escopo === "cavalo" || l.escopo === "carreta" ? "badge-roxo" : l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
+                  {l.escopo === "cavalo" ? "Cavalo" : l.escopo === "carreta" ? "Carreta" : l.escopo === "truck" ? (l.tipo === "bau" ? "T.Baú" : "T.Sider") : (l.tipo === "bau" ? "Baú" : "Sider")}
                 </span>
                 {podeEditar && (
                   <button
