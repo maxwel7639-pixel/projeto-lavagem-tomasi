@@ -100,6 +100,46 @@ function BolhaUser({ msg }: { msg: Mensagem }) {
   );
 }
 
+function PlacaConfirmacao({ label, valor, cor, onChange }: { label: string; valor: string; cor: string; onChange: (v: string) => void }) {
+  const [editando, setEditando] = useState(false);
+  return (
+    <div>
+      <label className="block text-xs font-semibold tracking-widest mb-1" style={{ color: cor }}>{label}</label>
+      {editando ? (
+        <div className="flex gap-2 items-center">
+          <input
+            autoFocus
+            type="text"
+            value={valor}
+            onChange={e => onChange(e.target.value.toUpperCase())}
+            maxLength={8}
+            className="flex-1 rounded-xl px-3 py-2 text-base font-mono uppercase text-white focus:outline-none focus:ring-2"
+            style={{ background: "#050507", border: `1px solid ${cor}` }}
+          />
+          <button
+            onClick={() => setEditando(false)}
+            className="text-xs font-semibold px-3 py-2 rounded-xl"
+            style={{ background: cor, color: "#fff" }}
+          >OK</button>
+        </div>
+      ) : (
+        <div
+          className="flex items-center justify-between rounded-xl px-4 py-3 cursor-pointer"
+          style={{ background: "#050507", border: `1px solid ${cor}44` }}
+          onClick={() => setEditando(true)}
+        >
+          <span className="font-mono font-bold text-white text-xl tracking-widest">
+            {valor || <span className="text-gray-500 text-base font-normal">Não identificada</span>}
+          </span>
+          <span className="text-xs ml-3 px-2 py-1 rounded-lg" style={{ background: `${cor}22`, color: cor }}>
+            Editar
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () => void }) {
   const [aberto, setAberto] = useState(false);
   const [estado, setEstado] = useState<ChatEstado>("fechado");
@@ -607,66 +647,22 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
 
                   {/* Placa do truck */}
                   {escopo === "truck" && (
-                    <div>
-                      <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">PLACA DO TRUCK</label>
-                      <input
-                        type="text"
-                        value={placaCavalo}
-                        onChange={e => setPlacaCavalo(e.target.value.toUpperCase())}
-                        placeholder="ABC1234"
-                        maxLength={8}
-                        className="w-full rounded-xl px-3 py-2 text-base font-mono uppercase text-white focus:outline-none focus:ring-2 focus:ring-[#6D5CF5]"
-                        style={{ background: "#050507", border: "1px solid #1D1D26" }}
-                      />
-                    </div>
+                    <PlacaConfirmacao label="PLACA DO TRUCK" valor={placaCavalo} cor="#8B7CF8" onChange={setPlacaCavalo} />
                   )}
 
                   {/* Completar rodotrem — só a 2ª carreta */}
                   {completarId && (
-                    <div>
-                      <label className="block text-xs font-semibold text-[#2F9E6F] tracking-widest mb-1">PLACA DA 2ª CARRETA</label>
-                      <input
-                        type="text"
-                        value={placaCarreta}
-                        onChange={e => setPlacaCarreta(e.target.value.toUpperCase())}
-                        placeholder="ABC1234"
-                        maxLength={8}
-                        className="w-full rounded-xl px-3 py-2 text-base font-mono uppercase text-white focus:outline-none focus:ring-2 focus:ring-[#2F9E6F]"
-                        style={{ background: "#050507", border: "1px solid #1D1D26" }}
-                      />
-                    </div>
+                    <PlacaConfirmacao label="PLACA DA 2ª CARRETA" valor={placaCarreta} cor="#2F9E6F" onChange={setPlacaCarreta} />
                   )}
 
                   {/* Placa do cavalo — só se escopo inclui cavalo */}
                   {!completarId && (escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem") && (
-                    <div>
-                      <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">PLACA DO CAVALO</label>
-                      <input
-                        type="text"
-                        value={placaCavalo}
-                        onChange={e => setPlacaCavalo(e.target.value.toUpperCase())}
-                        placeholder="ABC1234"
-                        maxLength={8}
-                        className="w-full rounded-xl px-3 py-2 text-base font-mono uppercase text-white focus:outline-none focus:ring-2 focus:ring-[#6D5CF5]"
-                        style={{ background: "#050507", border: "1px solid #1D1D26" }}
-                      />
-                    </div>
+                    <PlacaConfirmacao label="PLACA DO CAVALO" valor={placaCavalo} cor="#8B7CF8" onChange={setPlacaCavalo} />
                   )}
 
                   {/* Placa da carreta — só se escopo inclui carreta */}
                   {!completarId && (escopo === "ambos" || escopo === "carreta" || escopo === "rodotrem") && (
-                    <div>
-                      <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">PLACA DA CARRETA</label>
-                      <input
-                        type="text"
-                        value={placaCarreta}
-                        onChange={e => setPlacaCarreta(e.target.value.toUpperCase())}
-                        placeholder="ABC1234"
-                        maxLength={8}
-                        className="w-full rounded-xl px-3 py-2 text-base font-mono uppercase text-white focus:outline-none focus:ring-2 focus:ring-[#6D5CF5]"
-                        style={{ background: "#050507", border: "1px solid #1D1D26" }}
-                      />
-                    </div>
+                    <PlacaConfirmacao label="PLACA DA CARRETA" valor={placaCarreta} cor="#8B7CF8" onChange={setPlacaCarreta} />
                   )}
 
                   {/* Tipo — para ambos, carreta, truck ou rodotrem */}
