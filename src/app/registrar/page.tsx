@@ -462,7 +462,7 @@ export default function RegistrarPage() {
                   <p className="text-xs text-mx-muted mt-0.5">{formatarData(l.data_hora)}</p>
                 </div>
                 <span className={l.escopo === "cavalo" || l.escopo === "carreta" ? "badge-roxo" : l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
-                  {l.escopo === "cavalo" ? "Cavalo" : l.escopo === "carreta" ? "Carreta" : l.escopo === "truck" ? (l.tipo === "bau" ? "T.Baú" : "T.Sider") : (l.tipo === "bau" ? "Baú" : "Sider")}
+                  {l.escopo === "cavalo" ? "Cavalo" : l.escopo === "carreta" ? (l.tipo === "bau" ? "C.Baú" : "C.Sider") : l.escopo === "truck" ? (l.tipo === "bau" ? "T.Baú" : "T.Sider") : (l.tipo === "bau" ? "Baú" : "Sider")}
                 </span>
               </div>
             ))}
