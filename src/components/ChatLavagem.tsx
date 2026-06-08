@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 
-type Escopo = "ambos" | "cavalo" | "carreta" | "rodotrem" | "completar_rodotrem";
+type Escopo = "ambos" | "cavalo" | "carreta" | "truck" | "rodotrem" | "completar_rodotrem";
 
 type ChatEstado =
   | "fechado"
@@ -170,14 +170,16 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
       ambos: "Cavalo + Carreta",
       cavalo: "Só o cavalo",
       carreta: "Só a carreta",
+      truck: "Truck",
       rodotrem: "Rodotrem",
       completar_rodotrem: "Completar Rodotrem",
     };
     addMensagem({ de: "user", texto: labels[e] });
 
     setTimeout(() => {
-      if (e === "ambos" || e === "cavalo" || e === "rodotrem") {
-        addMensagem({ de: "bot", texto: "Toque no ＋ para enviar a foto da placa do cavalo." });
+      if (e === "ambos" || e === "cavalo" || e === "rodotrem" || e === "truck") {
+        const msgCavalo = e === "truck" ? "Toque no ＋ para enviar a foto da placa do truck." : "Toque no ＋ para enviar a foto da placa do cavalo.";
+        addMensagem({ de: "bot", texto: msgCavalo });
         setEstado("aguardando_cavalo");
       } else {
         addMensagem({ de: "bot", texto: "Toque no ＋ para enviar a foto da placa da carreta." });
@@ -306,8 +308,8 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
 
   async function salvar() {
     // Validação conforme escopo
-    if ((escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem") && !placaCavalo.trim()) {
-      setErroCampos("Preencha a placa do cavalo."); return;
+    if ((escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem" || escopo === "truck") && !placaCavalo.trim()) {
+      setErroCampos("Preencha a placa."); return;
     }
     if ((escopo === "ambos" || escopo === "carreta" || escopo === "rodotrem" || escopo === "completar_rodotrem") && !placaCarreta.trim()) {
       setErroCampos("Preencha a placa da carreta."); return;
@@ -315,8 +317,8 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
     if (escopo === "rodotrem" && !placaCarreta2.trim()) {
       setErroCampos("Preencha a placa da 2ª carreta."); return;
     }
-    if ((escopo === "ambos" || escopo === "carreta") && !tipo) {
-      setErroCampos("Selecione o tipo: Baú, Sider ou Rodotrem."); return;
+    if ((escopo === "ambos" || escopo === "carreta" || escopo === "truck") && !tipo) {
+      setErroCampos("Selecione o tipo: Baú ou Sider."); return;
     }
 
     setErroCampos("");
@@ -351,14 +353,18 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
         : null;
 
       // Monta o registro respeitando nulls por escopo
-      const escopoDb = escopo === "rodotrem" ? "ambos" : escopo === "completar_rodotrem" ? "carreta" : escopo;
+      const escopoDb =
+        escopo === "rodotrem" ? "ambos" :
+        escopo === "completar_rodotrem" ? "carreta" :
+        escopo === "truck" ? "cavalo" :
+        escopo;
       const tipoDb = escopo === "rodotrem" || escopo === "completar_rodotrem" ? "rodotrem" : tipo;
 
       const registro = {
         escopo: escopoDb,
         registrado_por: session.user.id,
-        placa_cavalo: (escopoDb === "ambos" || escopoDb === "cavalo") ? placaCavalo.trim().toUpperCase() : null,
-        placa_carreta: (escopoDb === "ambos" || escopoDb === "carreta") ? placaCarreta.trim().toUpperCase() : null,
+        placa_cavalo: (escopo === "truck" || escopoDb === "ambos" || escopoDb === "cavalo") ? placaCavalo.trim().toUpperCase() : null,
+        placa_carreta: (escopo !== "truck" && (escopoDb === "ambos" || escopoDb === "carreta")) ? placaCarreta.trim().toUpperCase() : null,
         placa_carreta2: escopo === "rodotrem" ? placaCarreta2.trim().toUpperCase() : null,
         tipo: tipoDb,
         foto_cavalo_url: urlCavalo,
@@ -371,7 +377,9 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
       // Mensagem de sucesso adaptada ao escopo
       const tipoLabel = tipo === "bau" ? "Baú" : tipo === "sider" ? "Sider" : "Rodotrem";
       let resumo = "";
-      if (escopo === "rodotrem") {
+      if (escopo === "truck") {
+        resumo = `Truck: ${placaCavalo.trim().toUpperCase()} — ${tipoLabel}`;
+      } else if (escopo === "rodotrem") {
         resumo = `${placaCavalo.trim().toUpperCase()} / ${placaCarreta.trim().toUpperCase()} / ${placaCarreta2.trim().toUpperCase()} — Rodotrem`;
       } else if (escopo === "completar_rodotrem") {
         resumo = `2ª Carreta: ${placaCarreta.trim().toUpperCase()} — Rodotrem`;
@@ -469,11 +477,12 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                   style={{ background: "rgba(109,92,245,0.2)", border: "1px solid rgba(109,92,245,0.4)" }}
                 />
                 <div className="flex flex-col gap-2 max-w-[85%]">
-                  {(["ambos", "cavalo", "carreta", "rodotrem", "completar_rodotrem"] as Escopo[]).map((e) => {
+                  {(["ambos", "cavalo", "carreta", "truck", "rodotrem", "completar_rodotrem"] as Escopo[]).map((e) => {
                     const labels: Record<Escopo, string> = {
                       ambos: "🚛 Cavalo + Carreta",
                       cavalo: "🚚 Só o cavalo",
                       carreta: "🔗 Só a carreta",
+                      truck: "🚚 Truck",
                       rodotrem: "🚛 Rodotrem",
                       completar_rodotrem: "➕ Completar Rodotrem",
                     };
@@ -507,10 +516,12 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                     <p className="text-xs text-red-400 font-medium">{erroCampos}</p>
                   )}
 
-                  {/* Placa do cavalo */}
-                  {(escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem") && (
+                  {/* Placa do cavalo / truck */}
+                  {(escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem" || escopo === "truck") && (
                     <div>
-                      <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">PLACA DO CAVALO</label>
+                      <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">
+                        {escopo === "truck" ? "PLACA DO TRUCK" : "PLACA DO CAVALO"}
+                      </label>
                       <input
                         type="text"
                         value={placaCavalo}
@@ -557,8 +568,8 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                     </div>
                   )}
 
-                  {/* Tipo — só para ambos ou carreta (não para rodotrem/completar_rodotrem) */}
-                  {(escopo === "ambos" || escopo === "carreta") && (
+                  {/* Tipo — para ambos, carreta e truck (não para rodotrem/completar_rodotrem) */}
+                  {(escopo === "ambos" || escopo === "carreta" || escopo === "truck") && (
                     <div>
                       <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-2">TIPO DE CARRETA</label>
                       <div className="grid grid-cols-3 gap-2">
@@ -605,10 +616,10 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                   <button
                     onClick={salvar}
                     disabled={
-                      ((escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem") && !placaCavalo.trim()) ||
+                      ((escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem" || escopo === "truck") && !placaCavalo.trim()) ||
                       ((escopo === "ambos" || escopo === "carreta" || escopo === "rodotrem" || escopo === "completar_rodotrem") && !placaCarreta.trim()) ||
                       (escopo === "rodotrem" && !placaCarreta2.trim()) ||
-                      ((escopo === "ambos" || escopo === "carreta") && !tipo)
+                      ((escopo === "ambos" || escopo === "carreta" || escopo === "truck") && !tipo)
                     }
                     className="w-full text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-50 transition-colors"
                     style={{ background: "#6D5CF5", boxShadow: "0 0 18px rgba(109,92,245,0.4)" }}
