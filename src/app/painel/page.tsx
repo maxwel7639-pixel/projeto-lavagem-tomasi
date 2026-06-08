@@ -454,7 +454,7 @@ export default function PainelPage() {
                   {l.tipo === "bau" ? "Baú" : l.tipo === "rodotrem" ? "Rodotrem" : "Sider"}
                 </span>
                 <span className="text-sm font-semibold text-[#2F9E6F]">
-                  {formatarValor(calcularValor(l.escopo, precoCheio))}
+                  {formatarValor(calcularValor(l.escopo, l.tipo, precoCheio))}
                 </span>
               </div>
             ))}
