@@ -9,7 +9,8 @@ export interface Lavagem {
   data_hora: string;
   placa_cavalo: string;
   placa_carreta: string;
-  tipo: "bau" | "sider";
+  placa_carreta2?: string | null;
+  tipo: "bau" | "sider" | "rodotrem";
   registrado_por: string | null;
   foto_cavalo_url: string | null;
   foto_carreta_url: string | null;

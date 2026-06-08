@@ -38,7 +38,8 @@ export default function RegistrarPage() {
   const [previewCarreta, setPreviewCarreta] = useState<string | null>(null);
   const [placaCavalo, setPlacaCavalo] = useState("");
   const [placaCarreta, setPlacaCarreta] = useState("");
-  const [tipo, setTipo] = useState<"bau" | "sider" | null>(null);
+  const [placaCarreta2, setPlacaCarreta2] = useState("");
+  const [tipo, setTipo] = useState<"bau" | "sider" | "rodotrem" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [autenticado, setAutenticado] = useState(false);
   const inputCavaloRef = useRef<HTMLInputElement>(null);
@@ -109,8 +110,9 @@ export default function RegistrarPage() {
   }
 
   async function salvar() {
-    if (!tipo) { setErro("Selecione o tipo de carreta (Baú ou Sider)."); return; }
-    if (!placaCavalo.trim() || !placaCarreta.trim()) { setErro("Preencha as duas placas."); return; }
+    if (!tipo) { setErro("Selecione o tipo (Baú, Sider ou Rodotrem)."); return; }
+    if (!placaCavalo.trim() || !placaCarreta.trim()) { setErro("Preencha as placas do cavalo e da carreta."); return; }
+    if (tipo === "rodotrem" && !placaCarreta2.trim()) { setErro("Preencha a placa da 2ª carreta do rodotrem."); return; }
     setErro(null);
     setEtapa("salvando");
 
@@ -121,7 +123,13 @@ export default function RegistrarPage() {
 
       const { data: lavagem, error: insErr } = await supabase
         .from("lavagens")
-        .insert({ placa_cavalo: placaCavalo.trim().toUpperCase(), placa_carreta: placaCarreta.trim().toUpperCase(), tipo, registrado_por: session.user.id })
+        .insert({
+          placa_cavalo: placaCavalo.trim().toUpperCase(),
+          placa_carreta: placaCarreta.trim().toUpperCase(),
+          placa_carreta2: tipo === "rodotrem" ? placaCarreta2.trim().toUpperCase() : null,
+          tipo,
+          registrado_por: session.user.id,
+        })
         .select().single();
 
       if (insErr || !lavagem) throw new Error("Erro ao salvar lavagem");
@@ -154,7 +162,7 @@ export default function RegistrarPage() {
     setEtapa("inicio");
     setFotoCavalo(null); setFotoCarreta(null);
     setPreviewCavalo(null); setPreviewCarreta(null);
-    setPlacaCavalo(""); setPlacaCarreta("");
+    setPlacaCavalo(""); setPlacaCarreta(""); setPlacaCarreta2("");
     setTipo(null); setErro(null);
     if (inputCavaloRef.current) inputCavaloRef.current.value = "";
     if (inputCarretaRef.current) inputCarretaRef.current.value = "";
@@ -328,21 +336,39 @@ export default function RegistrarPage() {
             {/* Tipo */}
             <div className="card">
               <p className="section-label mb-3">TIPO DE CARRETA</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   onClick={() => setTipo("bau")}
-                  className={`py-4 rounded-2xl font-semibold text-lg transition-colors ${tipo === "bau" ? "btn-primary" : "btn-secondary"}`}
+                  className={`py-4 rounded-2xl font-semibold text-base transition-colors ${tipo === "bau" ? "btn-primary" : "btn-secondary"}`}
                 >Baú</button>
                 <button
                   onClick={() => setTipo("sider")}
-                  className={`py-4 rounded-2xl font-semibold text-lg transition-colors ${tipo === "sider" ? "btn-primary" : "btn-secondary"}`}
+                  className={`py-4 rounded-2xl font-semibold text-base transition-colors ${tipo === "sider" ? "btn-primary" : "btn-secondary"}`}
                 >Sider</button>
+                <button
+                  onClick={() => setTipo("rodotrem")}
+                  className={`py-4 rounded-2xl font-semibold text-base transition-colors ${tipo === "rodotrem" ? "btn-primary" : "btn-secondary"}`}
+                >Rodotrem</button>
               </div>
+
+              {tipo === "rodotrem" && (
+                <div className="mt-4">
+                  <label className="block text-xs font-medium text-mx-soft mb-1">PLACA DA 2ª CARRETA</label>
+                  <input
+                    type="text"
+                    value={placaCarreta2}
+                    onChange={e => setPlacaCarreta2(e.target.value.toUpperCase())}
+                    placeholder="ABC-1234"
+                    className="input-field text-lg font-mono uppercase"
+                    maxLength={8}
+                  />
+                </div>
+              )}
             </div>
 
             <button
               onClick={salvar}
-              disabled={!tipo || !placaCavalo.trim() || !placaCarreta.trim()}
+              disabled={!tipo || !placaCavalo.trim() || !placaCarreta.trim() || (tipo === "rodotrem" && !placaCarreta2.trim())}
               className="btn-primary w-full text-lg py-4"
             >
               Confirmar e Salvar

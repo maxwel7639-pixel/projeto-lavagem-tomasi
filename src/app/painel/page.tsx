@@ -39,7 +39,8 @@ function mesParaLabel(valor: string) {
   return d.toLocaleString("pt-BR", { month: "long", year: "numeric" });
 }
 
-function calcularValor(escopo: string | null | undefined, precoCheio: number): number {
+function calcularValor(escopo: string | null | undefined, tipo: string | null | undefined, precoCheio: number): number {
+  if (tipo === "rodotrem") return precoCheio * 2;
   if (!escopo || escopo === "ambos" || escopo === "carreta") return precoCheio;
   if (escopo === "cavalo") return precoCheio / 2;
   return precoCheio;
@@ -199,8 +200,8 @@ export default function PainelPage() {
     doc.setTextColor(185, 180, 221);
     doc.text("Emitido em " + hoje + "  ·  Lava-Jato Tomasi", 14, 38);
 
-    const total = lista.length;
-    const totalReceber = lista.reduce((s, x) => s + calcularValor(x.escopo, precoCheio), 0);
+    const total = lista.reduce((s, x) => s + (x.tipo === "rodotrem" ? 2 : 1), 0);
+    const totalReceber = lista.reduce((s, x) => s + calcularValor(x.escopo, x.tipo, precoCheio), 0);
     const nBau = lista.filter((x) => x.tipo === "bau").length;
     const cardY = 48, cardH = 20, gap = 4;
     const cardW = (W - 28 - gap * 3) / 4;
@@ -225,15 +226,39 @@ export default function PainelPage() {
       doc.text(card.l, x + 4, cardY + 16);
     });
 
-    const linhas = lista.map((x) => [
-      formatarData(x.data_hora),
-      x.placa_cavalo || "-",
-      x.placa_carreta || "-",
-      x.tipo === "bau" ? "Bau" : "Sider",
-      x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : "Ambos",
-      x.perfis?.nome || "-",
-      formatarValor(calcularValor(x.escopo, precoCheio)),
-    ]);
+    const linhas = lista.flatMap((x) => {
+      if (x.tipo === "rodotrem") {
+        return [
+          [
+            formatarData(x.data_hora),
+            x.placa_cavalo || "-",
+            x.placa_carreta || "-",
+            "Rodotrem (1/2)",
+            "Ambos",
+            x.perfis?.nome || "-",
+            formatarValor(precoCheio),
+          ],
+          [
+            formatarData(x.data_hora),
+            "-",
+            x.placa_carreta2 || "-",
+            "Rodotrem (2/2)",
+            "Carreta extra",
+            x.perfis?.nome || "-",
+            formatarValor(precoCheio),
+          ],
+        ];
+      }
+      return [[
+        formatarData(x.data_hora),
+        x.placa_cavalo || "-",
+        x.placa_carreta || "-",
+        x.tipo === "bau" ? "Bau" : "Sider",
+        x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : "Ambos",
+        x.perfis?.nome || "-",
+        formatarValor(calcularValor(x.escopo, x.tipo, precoCheio)),
+      ]];
+    });
 
     autoTable(doc, {
       startY: cardY + cardH + 8,
@@ -262,10 +287,10 @@ export default function PainelPage() {
     router.replace("/");
   }
 
-  const totalMes = lavagens.length;
+  const totalMes = lavagens.reduce((s, l) => s + (l.tipo === "rodotrem" ? 2 : 1), 0);
   const totalBau = lavagens.filter(l => l.tipo === "bau").length;
   const totalSider = lavagens.filter(l => l.tipo === "sider").length;
-  const totalReceber = lavagens.reduce((s, l) => s + calcularValor(l.escopo, precoCheio), 0);
+  const totalReceber = lavagens.reduce((s, l) => s + calcularValor(l.escopo, l.tipo, precoCheio), 0);
 
   const mesesOpcoes = Array.from({ length: 6 }, (_, i) => {
     const d = new Date();
@@ -419,13 +444,14 @@ export default function PainelPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-mono font-bold text-white text-sm">{l.placa_cavalo || "—"}</span>
                     {l.placa_carreta && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta}</span></>}
+                    {l.placa_carreta2 && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta2}</span></>}
                   </div>
                   <p className="text-xs text-mx-muted mt-0.5">{formatarData(l.data_hora)}</p>
                   <p className="text-xs text-mx-muted sm:hidden">{l.perfis?.nome ?? "—"}</p>
                 </div>
                 <span className="text-xs text-mx-muted hidden sm:block">{l.perfis?.nome ?? "—"}</span>
-                <span className={l.tipo === "bau" ? "badge-roxo" : "badge-verde"}>
-                  {l.tipo === "bau" ? "Baú" : "Sider"}
+                <span className={l.tipo === "bau" ? "badge-roxo" : l.tipo === "rodotrem" ? "badge-laranja" : "badge-verde"}>
+                  {l.tipo === "bau" ? "Baú" : l.tipo === "rodotrem" ? "Rodotrem" : "Sider"}
                 </span>
                 <span className="text-sm font-semibold text-[#2F9E6F]">
                   {formatarValor(calcularValor(l.escopo, precoCheio))}
