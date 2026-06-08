@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 
-type Escopo = "ambos" | "cavalo" | "carreta";
+type Escopo = "ambos" | "cavalo" | "carreta" | "rodotrem" | "completar_rodotrem";
 
 type ChatEstado =
   | "fechado"
@@ -166,15 +166,20 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
   function escolherEscopo(e: Escopo) {
     setEscopo(e);
     escopoRef.current = e;
-    const label = e === "ambos" ? "Cavalo + Carreta" : e === "cavalo" ? "Só o cavalo" : "Só a carreta";
-    addMensagem({ de: "user", texto: label });
+    const labels: Record<Escopo, string> = {
+      ambos: "Cavalo + Carreta",
+      cavalo: "Só o cavalo",
+      carreta: "Só a carreta",
+      rodotrem: "Rodotrem",
+      completar_rodotrem: "Completar Rodotrem",
+    };
+    addMensagem({ de: "user", texto: labels[e] });
 
     setTimeout(() => {
-      if (e === "ambos" || e === "cavalo") {
+      if (e === "ambos" || e === "cavalo" || e === "rodotrem") {
         addMensagem({ de: "bot", texto: "Toque no ＋ para enviar a foto da placa do cavalo." });
         setEstado("aguardando_cavalo");
       } else {
-        // escopo = carreta
         addMensagem({ de: "bot", texto: "Toque no ＋ para enviar a foto da placa da carreta." });
         setEstado("aguardando_carreta");
       }
@@ -191,7 +196,7 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
 
     const escopoAtual = escopoRef.current;
 
-    if (escopoAtual === "ambos") {
+    if (escopoAtual === "ambos" || escopoAtual === "rodotrem") {
       setEstado("aguardando_carreta");
       setTimeout(() => {
         addMensagem({ de: "bot", texto: "Foto do cavalo recebida! Agora envie a foto da placa da carreta." });
@@ -301,17 +306,17 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
 
   async function salvar() {
     // Validação conforme escopo
-    if ((escopo === "ambos" || escopo === "cavalo") && !placaCavalo.trim()) {
+    if ((escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem") && !placaCavalo.trim()) {
       setErroCampos("Preencha a placa do cavalo."); return;
     }
-    if ((escopo === "ambos" || escopo === "carreta") && !placaCarreta.trim()) {
+    if ((escopo === "ambos" || escopo === "carreta" || escopo === "rodotrem" || escopo === "completar_rodotrem") && !placaCarreta.trim()) {
       setErroCampos("Preencha a placa da carreta."); return;
+    }
+    if (escopo === "rodotrem" && !placaCarreta2.trim()) {
+      setErroCampos("Preencha a placa da 2ª carreta."); return;
     }
     if ((escopo === "ambos" || escopo === "carreta") && !tipo) {
       setErroCampos("Selecione o tipo: Baú, Sider ou Rodotrem."); return;
-    }
-    if (tipo === "rodotrem" && !placaCarreta2.trim()) {
-      setErroCampos("Preencha a placa da 2ª carreta do rodotrem."); return;
     }
 
     setErroCampos("");
@@ -346,13 +351,16 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
         : null;
 
       // Monta o registro respeitando nulls por escopo
+      const escopoDb = escopo === "rodotrem" ? "ambos" : escopo === "completar_rodotrem" ? "carreta" : escopo;
+      const tipoDb = escopo === "rodotrem" || escopo === "completar_rodotrem" ? "rodotrem" : tipo;
+
       const registro = {
-        escopo,
+        escopo: escopoDb,
         registrado_por: session.user.id,
-        placa_cavalo: (escopo === "ambos" || escopo === "cavalo") ? placaCavalo.trim().toUpperCase() : null,
-        placa_carreta: (escopo === "ambos" || escopo === "carreta") ? placaCarreta.trim().toUpperCase() : null,
-        placa_carreta2: tipo === "rodotrem" ? placaCarreta2.trim().toUpperCase() : null,
-        tipo: (escopo === "ambos" || escopo === "carreta") ? tipo : null,
+        placa_cavalo: (escopoDb === "ambos" || escopoDb === "cavalo") ? placaCavalo.trim().toUpperCase() : null,
+        placa_carreta: (escopoDb === "ambos" || escopoDb === "carreta") ? placaCarreta.trim().toUpperCase() : null,
+        placa_carreta2: escopo === "rodotrem" ? placaCarreta2.trim().toUpperCase() : null,
+        tipo: tipoDb,
         foto_cavalo_url: urlCavalo,
         foto_carreta_url: urlCarreta,
       };
@@ -361,13 +369,14 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
       if (error) throw error;
 
       // Mensagem de sucesso adaptada ao escopo
-      const tipoLabel = tipo === "bau" ? "Baú" : tipo === "rodotrem" ? "Rodotrem" : "Sider";
+      const tipoLabel = tipo === "bau" ? "Baú" : tipo === "sider" ? "Sider" : "Rodotrem";
       let resumo = "";
-      if (escopo === "ambos") {
-        const placas = tipo === "rodotrem"
-          ? `${placaCavalo.trim().toUpperCase()} / ${placaCarreta.trim().toUpperCase()} / ${placaCarreta2.trim().toUpperCase()}`
-          : `${placaCavalo.trim().toUpperCase()} / ${placaCarreta.trim().toUpperCase()}`;
-        resumo = `${placas} — ${tipoLabel}`;
+      if (escopo === "rodotrem") {
+        resumo = `${placaCavalo.trim().toUpperCase()} / ${placaCarreta.trim().toUpperCase()} / ${placaCarreta2.trim().toUpperCase()} — Rodotrem`;
+      } else if (escopo === "completar_rodotrem") {
+        resumo = `2ª Carreta: ${placaCarreta.trim().toUpperCase()} — Rodotrem`;
+      } else if (escopo === "ambos") {
+        resumo = `${placaCavalo.trim().toUpperCase()} / ${placaCarreta.trim().toUpperCase()} — ${tipoLabel}`;
       } else if (escopo === "cavalo") {
         resumo = `Cavalo: ${placaCavalo.trim().toUpperCase()}`;
       } else {
@@ -460,11 +469,13 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                   style={{ background: "rgba(109,92,245,0.2)", border: "1px solid rgba(109,92,245,0.4)" }}
                 />
                 <div className="flex flex-col gap-2 max-w-[85%]">
-                  {(["ambos", "cavalo", "carreta"] as Escopo[]).map((e) => {
+                  {(["ambos", "cavalo", "carreta", "rodotrem", "completar_rodotrem"] as Escopo[]).map((e) => {
                     const labels: Record<Escopo, string> = {
                       ambos: "🚛 Cavalo + Carreta",
                       cavalo: "🚚 Só o cavalo",
                       carreta: "🔗 Só a carreta",
+                      rodotrem: "🚛 Rodotrem",
+                      completar_rodotrem: "➕ Completar Rodotrem",
                     };
                     return (
                       <button
@@ -496,8 +507,8 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                     <p className="text-xs text-red-400 font-medium">{erroCampos}</p>
                   )}
 
-                  {/* Placa do cavalo — só se escopo inclui cavalo */}
-                  {(escopo === "ambos" || escopo === "cavalo") && (
+                  {/* Placa do cavalo */}
+                  {(escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem") && (
                     <div>
                       <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">PLACA DO CAVALO</label>
                       <input
@@ -512,10 +523,12 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                     </div>
                   )}
 
-                  {/* Placa da carreta — só se escopo inclui carreta */}
-                  {(escopo === "ambos" || escopo === "carreta") && (
+                  {/* Placa da carreta */}
+                  {(escopo === "ambos" || escopo === "carreta" || escopo === "rodotrem" || escopo === "completar_rodotrem") && (
                     <div>
-                      <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">PLACA DA CARRETA</label>
+                      <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">
+                        {escopo === "completar_rodotrem" ? "PLACA DA 2ª CARRETA" : "PLACA DA CARRETA"}
+                      </label>
                       <input
                         type="text"
                         value={placaCarreta}
@@ -528,7 +541,23 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                     </div>
                   )}
 
-                  {/* Tipo — só para ambos ou carreta */}
+                  {/* Placa da 2ª carreta — só para rodotrem */}
+                  {escopo === "rodotrem" && (
+                    <div>
+                      <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">PLACA DA 2ª CARRETA</label>
+                      <input
+                        type="text"
+                        value={placaCarreta2}
+                        onChange={e => setPlacaCarreta2(e.target.value.toUpperCase())}
+                        placeholder="ABC1234"
+                        maxLength={8}
+                        className="w-full rounded-xl px-3 py-2 text-base font-mono uppercase text-white focus:outline-none focus:ring-2 focus:ring-[#6D5CF5]"
+                        style={{ background: "#050507", border: "1px solid #1D1D26" }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Tipo — só para ambos ou carreta (não para rodotrem/completar_rodotrem) */}
                   {(escopo === "ambos" || escopo === "carreta") && (
                     <div>
                       <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-2">TIPO DE CARRETA</label>
@@ -576,10 +605,10 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                   <button
                     onClick={salvar}
                     disabled={
-                      ((escopo === "ambos" || escopo === "cavalo") && !placaCavalo.trim()) ||
-                      ((escopo === "ambos" || escopo === "carreta") && !placaCarreta.trim()) ||
-                      ((escopo === "ambos" || escopo === "carreta") && !tipo) ||
-                      (tipo === "rodotrem" && !placaCarreta2.trim())
+                      ((escopo === "ambos" || escopo === "cavalo" || escopo === "rodotrem") && !placaCavalo.trim()) ||
+                      ((escopo === "ambos" || escopo === "carreta" || escopo === "rodotrem" || escopo === "completar_rodotrem") && !placaCarreta.trim()) ||
+                      (escopo === "rodotrem" && !placaCarreta2.trim()) ||
+                      ((escopo === "ambos" || escopo === "carreta") && !tipo)
                     }
                     className="w-full text-white font-semibold py-3 rounded-xl text-sm disabled:opacity-50 transition-colors"
                     style={{ background: "#6D5CF5", boxShadow: "0 0 18px rgba(109,92,245,0.4)" }}

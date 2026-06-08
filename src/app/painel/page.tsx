@@ -387,7 +387,7 @@ export default function PainelPage() {
         </div>
 
         {/* Resumo com Total a Receber */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-3 gap-3">
           {[
             { n: totalMes, l: "TOTAL" },
             { n: totalBau, l: "BAÚ" },
@@ -398,10 +398,6 @@ export default function PainelPage() {
               <p className="section-label mt-1">{l}</p>
             </div>
           ))}
-          <div className="card text-center py-4 col-span-2 sm:col-span-1" style={{ border: "1px solid rgba(47,158,111,0.4)" }}>
-            <p className="text-2xl font-bold text-[#2F9E6F]">{formatarValor(totalReceber)}</p>
-            <p className="section-label mt-1">A RECEBER</p>
-          </div>
         </div>
 
         {/* Exportar PDF */}
@@ -425,16 +421,15 @@ export default function PainelPage() {
           </div>
         ) : (
           <div className="card p-0 overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-3 text-white text-xs font-bold" style={{ background: "#6D5CF5" }}>
+            <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-4 py-3 text-white text-xs font-bold" style={{ background: "#6D5CF5" }}>
               <span>PLACAS / DATA</span>
               <span className="hidden sm:block">LAVADOR</span>
               <span>TIPO</span>
-              <span>VALOR</span>
             </div>
             {lavagens.map((l, i) => (
               <div
                 key={l.id}
-                className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-3 items-center"
+                className="grid grid-cols-[1fr_auto_auto] gap-3 px-4 py-3 items-center"
                 style={{
                   background: i % 2 === 0 ? "#0D0D12" : "#0F0F16",
                   borderTop: "1px solid #1D1D26",
@@ -452,9 +447,6 @@ export default function PainelPage() {
                 <span className="text-xs text-mx-muted hidden sm:block">{l.perfis?.nome ?? "—"}</span>
                 <span className={l.tipo === "bau" ? "badge-roxo" : l.tipo === "rodotrem" ? "badge-laranja" : "badge-verde"}>
                   {l.tipo === "bau" ? "Baú" : l.tipo === "rodotrem" ? "Rodotrem" : "Sider"}
-                </span>
-                <span className="text-sm font-semibold text-[#2F9E6F]">
-                  {formatarValor(calcularValor(l.escopo, l.tipo, precoCheio))}
                 </span>
               </div>
             ))}
