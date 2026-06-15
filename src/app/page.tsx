@@ -43,7 +43,7 @@ export default function LoginPage() {
       }
 
       // Navegação real (full reload) — garante que o cookie da sessão esteja disponível na próxima página
-      if (["gestor","dev","operacional","gestor_leitura"].includes(perfil.papel)) {
+      if (["gestor","dev","operacional","gestor_leitura","lavador"].includes(perfil.papel)) {
         window.location.href = "/painel";
       } else {
         window.location.href = "/registrar";
