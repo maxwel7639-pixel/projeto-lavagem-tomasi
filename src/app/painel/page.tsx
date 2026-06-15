@@ -183,6 +183,16 @@ export default function PainelPage() {
 
   function exportarPDF() {
     const lista = lavagens;
+    const listaPDF = lista.flatMap((x) => {
+      if (x.escopo === "rodotrem" && x.placa_carreta_2) {
+        const parte2 = x.placa_carreta_2;
+        return [
+          { ...x, placa_carreta_2: null } as LavagemComPerfil,
+          { ...x, placa_cavalo: "", placa_carreta: parte2, placa_carreta_2: null } as LavagemComPerfil,
+        ];
+      }
+      return [x];
+    });
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const W = doc.internal.pageSize.getWidth();
     const roxo: [number, number, number] = [109, 92, 245];
@@ -213,17 +223,17 @@ export default function PainelPage() {
     doc.setTextColor(185, 180, 221);
     doc.text("Emitido em " + hoje + "  ·  Lava-Jato Tomasi", 14, 38);
 
-    const total = lista.length;
-    const nBau = lista.filter((x) => x.tipo === "bau").length;
+    const total = listaPDF.length;
+    const nBau = listaPDF.filter((x) => x.tipo === "bau").length;
     const cardY = 48, cardH = 20, gap = 4;
 
     if (mostraValores) {
-      const totalReceber = lista.reduce((s, x) => s + calcularValor(x, precoCheio), 0);
+      const totalReceber = listaPDF.reduce((s, x) => s + calcularValor(x, precoCheio), 0);
       const cardW = (W - 28 - gap * 3) / 4;
       const cards: { n: string; l: string; c: [number, number, number] }[] = [
         { n: String(total), l: "TOTAL LAVAGENS", c: roxo },
         { n: String(nBau), l: "BAU", c: roxo },
-        { n: String(lista.length - nBau), l: "SIDER", c: [47, 158, 111] },
+        { n: String(listaPDF.length - nBau), l: "SIDER", c: [47, 158, 111] },
         { n: formatarValor(totalReceber), l: "TOTAL A RECEBER", c: [47, 158, 111] },
       ];
       cards.forEach((card, i) => {
@@ -245,7 +255,7 @@ export default function PainelPage() {
       const cards: { n: string; l: string; c: [number, number, number] }[] = [
         { n: String(total), l: "TOTAL LAVAGENS", c: roxo },
         { n: String(nBau), l: "BAU", c: roxo },
-        { n: String(lista.length - nBau), l: "SIDER", c: [47, 158, 111] },
+        { n: String(listaPDF.length - nBau), l: "SIDER", c: [47, 158, 111] },
       ];
       cards.forEach((card, i) => {
         const x = 14 + i * (cardW + gap);
@@ -263,13 +273,13 @@ export default function PainelPage() {
       });
     }
 
-    const linhas = lista.map((x) => {
+    const linhas = listaPDF.map((x) => {
       const base = [
         formatarData(x.data_hora),
         x.placa_cavalo || "-",
-        [x.placa_carreta, x.placa_carreta_2].filter(Boolean).join(" / ") || "-",
+        x.placa_carreta || "-",
         x.tipo === "bau" ? "Bau" : x.tipo === "sider" ? "Sider" : "-",
-        x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : x.escopo === "truck" ? "Truck" : x.escopo === "rodotrem" ? "Rodotrem" : "Ambos",
+        x.escopo === "cavalo" ? "Só cavalo" : x.escopo === "carreta" ? "Só carreta" : x.escopo === "truck" ? "Truck" : x.escopo === "rodotrem" ? (x.placa_cavalo ? "Rodotrem 1ª" : "Rodotrem 2ª") : "Ambos",
         x.perfis?.nome || "-",
       ];
       if (mostraValores) base.push(formatarValor(calcularValor(x, precoCheio)));
