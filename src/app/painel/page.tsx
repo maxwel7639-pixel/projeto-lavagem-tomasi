@@ -33,6 +33,14 @@ function formatarData(iso: string) {
   });
 }
 
+function formatarDataCurta(iso: string) {
+  return new Date(iso).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 function mesParaLabel(valor: string) {
   const [ano, mes] = valor.split("-");
   const d = new Date(Number(ano), Number(mes) - 1, 1);
@@ -275,7 +283,7 @@ export default function PainelPage() {
 
     const linhas = listaPDF.map((x) => {
       const base = [
-        formatarData(x.data_hora),
+        formatarDataCurta(x.data_hora),
         x.placa_cavalo || "-",
         x.placa_carreta || "-",
         x.tipo === "bau" ? "Bau" : x.tipo === "sider" ? "Sider" : "-",
@@ -287,8 +295,8 @@ export default function PainelPage() {
     });
 
     const head = mostraValores
-      ? [["Data / Hora", "Cavalo", "Carreta", "Tipo", "Escopo", "Lavador", "Valor"]]
-      : [["Data / Hora", "Cavalo", "Carreta", "Tipo", "Escopo", "Lavador"]];
+      ? [["Data", "Cavalo", "Carreta", "Tipo", "Escopo", "Lavador", "Valor"]]
+      : [["Data", "Cavalo", "Carreta", "Tipo", "Escopo", "Lavador"]];
 
     autoTable(doc, {
       startY: cardY + cardH + 8,
@@ -581,7 +589,7 @@ export default function PainelPage() {
         )}
       </main>
 
-      <ChatLavagem onLavagemSalva={carregarDados} />
+      <ChatLavagem onLavagemSalva={carregarDados} papel={papel} />
     </div>
   );
 }

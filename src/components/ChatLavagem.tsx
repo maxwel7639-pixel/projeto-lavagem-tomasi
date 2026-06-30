@@ -140,7 +140,12 @@ function PlacaConfirmacao({ label, valor, cor, onChange }: { label: string; valo
   );
 }
 
-export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () => void }) {
+function hojeISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export default function ChatLavagem({ onLavagemSalva, papel }: { onLavagemSalva?: () => void; papel?: string }) {
   const [aberto, setAberto] = useState(false);
   const [estado, setEstado] = useState<ChatEstado>("fechado");
   const [escopo, setEscopo] = useState<Escopo>("ambos");
@@ -153,6 +158,8 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
   const [erroCampos, setErroCampos] = useState("");
   const [completarId, setCompletarId] = useState<string | null>(null);
   const [listaRodotrens, setListaRodotrens] = useState<RodotremIncompleto[]>([]);
+  const [lavagemPassada, setLavagemPassada] = useState(false);
+  const [dataLavagem, setDataLavagem] = useState(hojeISO);
 
   const inputCavaloRef = useRef<HTMLInputElement>(null);
   const inputCarretaRef = useRef<HTMLInputElement>(null);
@@ -185,6 +192,8 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
     setErroCampos("");
     setCompletarId(null);
     completarIdRef.current = null;
+    setLavagemPassada(false);
+    setDataLavagem(hojeISO());
     if (inputCavaloRef.current) inputCavaloRef.current.value = "";
     if (inputCarretaRef.current) inputCarretaRef.current.value = "";
   }
@@ -468,6 +477,9 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
       const registro = {
         escopo,
         registrado_por: session.user.id,
+        ...(lavagemPassada
+          ? { data_hora: new Date(`${dataLavagem}T12:00:00`).toISOString() }
+          : {}),
         placa_cavalo: (escopo === "ambos" || escopo === "cavalo" || escopo === "truck" || escopo === "rodotrem") ? placaCavalo.trim().toUpperCase() : null,
         placa_carreta: (escopo === "ambos" || escopo === "carreta" || escopo === "rodotrem") ? placaCarreta.trim().toUpperCase() : null,
         tipo: (escopo === "ambos" || escopo === "carreta" || escopo === "truck" || escopo === "rodotrem") ? tipo : null,
@@ -685,6 +697,36 @@ export default function ChatLavagem({ onLavagemSalva }: { onLavagemSalva?: () =>
                             : { background: "transparent", color: "#8B7CF8", border: "1px solid rgba(109,92,245,0.35)" }}
                         >Sider</button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Registrar lavagem passada — só gestor/dev */}
+                  {!completarId && (papel === "gestor" || papel === "dev") && (
+                    <div className="space-y-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setLavagemPassada(v => !v)}
+                        className="w-full font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                        style={lavagemPassada
+                          ? { background: "rgba(109,92,245,0.12)", color: "#8B7CF8", border: "1px solid #6D5CF5" }
+                          : { background: "transparent", color: "#9090A0", border: "1px solid #1D1D26" }}
+                      >
+                        {lavagemPassada ? "✓ Registrar lavagem passada" : "Registrar lavagem passada"}
+                      </button>
+                      {lavagemPassada && (
+                        <div>
+                          <label className="block text-xs font-semibold text-[#8B7CF8] tracking-widest mb-1">DATA DA LAVAGEM</label>
+                          <input
+                            type="date"
+                            value={dataLavagem}
+                            max={hojeISO()}
+                            onChange={e => setDataLavagem(e.target.value)}
+                            className="w-full rounded-xl px-3 py-2 text-base text-white focus:outline-none focus:ring-2"
+                            style={{ background: "#050507", border: "1px solid rgba(109,92,245,0.35)" }}
+                          />
+                          <p className="text-[11px] text-[#9090A0] mt-1">Salva com horário 12:00 (meio-dia) na data escolhida.</p>
+                        </div>
+                      )}
                     </div>
                   )}
 
