@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { LavagemComPerfil } from "@/lib/types";
 import ChatLavagem from "@/components/ChatLavagem";
+import LimpezaInterna from "@/components/LimpezaInterna";
 import LogoMX from "@/components/LogoMX";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -80,6 +81,7 @@ export default function PainelPage() {
   const [papel, setPapel] = useState("");
   const [userId, setUserId] = useState("");
   const [autenticado, setAutenticado] = useState(false);
+  const [aba, setAba] = useState<"lavagens" | "limpeza">("lavagens");
 
   const isDev = papel === "dev";
   const isOperacional = papel === "operacional";
@@ -367,6 +369,30 @@ export default function PainelPage() {
           </h1>
         </div>
 
+        {/* Abas — só dev */}
+        {isDev && (
+          <div className="flex gap-2">
+            {([
+              { id: "lavagens", label: "Lavagens" },
+              { id: "limpeza", label: "Limpeza Interna" },
+            ] as const).map(t => (
+              <button
+                key={t.id}
+                onClick={() => setAba(t.id)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                style={aba === t.id
+                  ? { background: "#6D5CF5", color: "#fff", boxShadow: "0 0 14px rgba(109,92,245,0.4)" }
+                  : { background: "transparent", color: "#8B7CF8", border: "1px solid rgba(109,92,245,0.35)" }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {(!isDev || aba === "lavagens") && (
+          <>
+
         {/* Preço por lavagem — só gestor João */}
         {papel === "gestor" && <div className="card space-y-3">
           <p className="section-label">Configuração de Preço</p>
@@ -587,6 +613,10 @@ export default function PainelPage() {
             </div>
           </div>
         )}
+          </>
+        )}
+
+        {isDev && aba === "limpeza" && <LimpezaInterna userId={userId} />}
       </main>
 
       <ChatLavagem onLavagemSalva={carregarDados} papel={papel} />
