@@ -23,3 +23,18 @@ export interface LavagemComPerfil extends Lavagem {
     nome: string;
   } | null;
 }
+
+// Tabela lavagens_maxwel — registro pessoal de lavagens do Maxwel (aba "Minhas Lavagens", só dev)
+export interface LavagemMaxwel {
+  id: string;
+  data: string; // date (YYYY-MM-DD)
+  placa_cavalo: string | null;
+  placa_carreta: string | null;
+  tipo: string | null;
+  escopo: string | null;
+  valor: number;
+  observacao: string | null;
+  excluido: boolean;
+  excluido_em: string | null;
+  created_at: string;
+}
