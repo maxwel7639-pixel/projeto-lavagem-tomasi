@@ -3,22 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import { LavagemMaxwel } from "@/lib/types";
+import ChatMinhasLavagens from "@/components/ChatMinhasLavagens";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
-const VALOR_FIXO = 30;
 
 const TIPOS = [
   { v: "bau", l: "Baú" },
   { v: "sider", l: "Sider" },
-  { v: "rodotrem", l: "Rodotrem" },
-] as const;
-
-const ESCOPOS = [
-  { v: "cavalo", l: "Só cavalo" },
-  { v: "carreta", l: "Só carreta" },
-  { v: "truck", l: "Truck" },
-  { v: "ambos", l: "Cavalo + Carreta" },
   { v: "rodotrem", l: "Rodotrem" },
 ] as const;
 
@@ -32,11 +23,6 @@ function mesNome(valor: string) {
   const [ano, mes] = valor.split("-");
   const d = new Date(Number(ano), Number(mes) - 1, 1);
   return d.toLocaleString("pt-BR", { month: "long" });
-}
-
-function hojeISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function formatarDataBR(data: string) {
@@ -60,13 +46,6 @@ export default function MinhasLavagens({ userId }: { userId: string }) {
   });
   const [lavagens, setLavagens] = useState<LavagemMaxwel[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [data, setData] = useState(hojeISO);
-  const [placaCavalo, setPlacaCavalo] = useState("");
-  const [placaCarreta, setPlacaCarreta] = useState("");
-  const [tipo, setTipo] = useState<string>("bau");
-  const [escopo, setEscopo] = useState<string>("ambos");
-  const [observacao, setObservacao] = useState("");
-  const [salvando, setSalvando] = useState(false);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -86,29 +65,6 @@ export default function MinhasLavagens({ userId }: { userId: string }) {
   }, [mesSelecionado]);
 
   useEffect(() => { carregar(); }, [carregar]);
-
-  async function adicionar() {
-    if (!data) return;
-    setSalvando(true);
-    const supabase = createClient();
-    await supabase.from("lavagens_maxwel").insert({
-      data,
-      placa_cavalo: placaCavalo.trim().toUpperCase() || null,
-      placa_carreta: placaCarreta.trim().toUpperCase() || null,
-      tipo,
-      escopo,
-      valor: VALOR_FIXO,
-      observacao: observacao.trim() || null,
-    });
-    setPlacaCavalo("");
-    setPlacaCarreta("");
-    setTipo("bau");
-    setEscopo("ambos");
-    setObservacao("");
-    setData(hojeISO());
-    setSalvando(false);
-    carregar();
-  }
 
   async function excluir(id: string) {
     if (!confirm("Excluir esta lavagem?")) return;
@@ -243,90 +199,11 @@ export default function MinhasLavagens({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* Formulário adicionar */}
+      {/* Adicionar via chat (texto) */}
       <div className="card space-y-3">
         <p className="section-label">Adicionar Lavagem</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label className="block text-xs text-mx-muted mb-1">DATA</label>
-            <input
-              type="date"
-              value={data}
-              max={hojeISO()}
-              onChange={e => setData(e.target.value)}
-              className="input-field text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-mx-muted mb-1">TIPO</label>
-            <select
-              value={tipo}
-              onChange={e => setTipo(e.target.value)}
-              className="input-field text-sm"
-            >
-              {TIPOS.map(t => (
-                <option key={t.v} value={t.v} className="bg-[#0D0D12]">{t.l}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-mx-muted mb-1">PLACA CAVALO</label>
-            <input
-              type="text"
-              value={placaCavalo}
-              onChange={e => setPlacaCavalo(e.target.value.toUpperCase())}
-              maxLength={8}
-              placeholder="ABC1D23 (opcional)"
-              className="input-field text-sm font-mono uppercase"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-mx-muted mb-1">PLACA CARRETA</label>
-            <input
-              type="text"
-              value={placaCarreta}
-              onChange={e => setPlacaCarreta(e.target.value.toUpperCase())}
-              maxLength={8}
-              placeholder="ABC1D23 (opcional)"
-              className="input-field text-sm font-mono uppercase"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-mx-muted mb-1">ESCOPO</label>
-            <select
-              value={escopo}
-              onChange={e => setEscopo(e.target.value)}
-              className="input-field text-sm"
-            >
-              {ESCOPOS.map(s => (
-                <option key={s.v} value={s.v} className="bg-[#0D0D12]">{s.l}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-mx-muted mb-1">VALOR</label>
-            <div className="input-field text-sm flex items-center text-mx-soft">
-              R$ 30,00 por lavagem
-            </div>
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs text-mx-muted mb-1">OBSERVAÇÃO (opcional)</label>
-          <input
-            type="text"
-            value={observacao}
-            onChange={e => setObservacao(e.target.value)}
-            placeholder="Anotação livre..."
-            className="input-field text-sm"
-          />
-        </div>
-        <button
-          onClick={adicionar}
-          disabled={salvando || !data}
-          className="btn-primary w-full"
-        >
-          {salvando ? "Adicionando..." : "Adicionar"}
-        </button>
+        <p className="text-xs text-mx-muted">Registre por um chat rápido — escolha o escopo e digite as placas. Valor automático: R$ 30 (rodotrem R$ 60).</p>
+        <ChatMinhasLavagens onRegistrado={carregar} />
       </div>
 
       {/* Exportar PDF */}
