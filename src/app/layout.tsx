@@ -39,7 +39,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Lava-Jato Tomasi" />
-        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`${inter.className} min-h-screen bg-mx-bg text-mx-text`}>
         {children}
