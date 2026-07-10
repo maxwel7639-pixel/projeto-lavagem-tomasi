@@ -177,6 +177,16 @@ export default function PainelPage() {
 
   useEffect(() => { if (autenticado) carregarDados(); }, [autenticado, carregarDados]);
 
+  // Recarregar a aba atual (só dev). Lavagens => carregarDados; Minhas => sinal pro componente.
+  const [sinalMinhas, setSinalMinhas] = useState(0);
+  const [girandoRefresh, setGirandoRefresh] = useState(false);
+  function recarregarAba() {
+    setGirandoRefresh(true);
+    if (aba === "minhas") setSinalMinhas(n => n + 1);
+    else carregarDados();
+    setTimeout(() => setGirandoRefresh(false), 600);
+  }
+
   async function salvarPreco() {
     const valor = parseFloat(precoEditando.replace(",", "."));
     if (isNaN(valor) || valor < 0) return;
@@ -360,13 +370,26 @@ export default function PainelPage() {
       </header>
 
       <main className="relative z-10 max-w-2xl mx-auto p-4 space-y-5">
-        <div className="pt-2">
+        <div className="pt-2 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">
             Painel{" "}
             <em className="not-italic text-[#8B7CF8]">
               {isDev ? "Dev" : isOperacional ? "Operacional" : isGestorLeitura ? "Leitura" : "Gestor"}
             </em>
           </h1>
+          {isDev && (
+            <button
+              onClick={recarregarAba}
+              aria-label="Recarregar dados da aba"
+              title="Recarregar"
+              className="flex items-center justify-center w-9 h-9 rounded-xl transition-colors"
+              style={{ color: "#8B7CF8", border: "1px solid rgba(109,92,245,0.35)", background: "transparent" }}
+            >
+              <svg className={`w-5 h-5 ${girandoRefresh ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Abas — só dev */}
@@ -616,10 +639,11 @@ export default function PainelPage() {
           </>
         )}
 
-        {isDev && aba === "minhas" && <MinhasLavagens userId={userId} />}
+        {isDev && aba === "minhas" && <MinhasLavagens userId={userId} recarregarSinal={sinalMinhas} />}
       </main>
 
-      <ChatLavagem onLavagemSalva={carregarDados} papel={papel} />
+      {/* Chat flutuante — escondido para dev (que já tem o botão "Registrar lavagem" na aba Minhas) */}
+      {!isDev && <ChatLavagem onLavagemSalva={carregarDados} papel={papel} />}
     </div>
   );
 }

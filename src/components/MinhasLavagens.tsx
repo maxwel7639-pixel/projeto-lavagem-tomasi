@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import { LavagemMaxwel } from "@/lib/types";
 import ChatMinhasLavagens from "@/components/ChatMinhasLavagens";
@@ -39,7 +39,7 @@ function rotuloTipo(tipo: string | null) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function MinhasLavagens({ userId }: { userId: string }) {
+export default function MinhasLavagens({ userId, recarregarSinal }: { userId: string; recarregarSinal?: number }) {
   const [mesSelecionado, setMesSelecionado] = useState(() => {
     const hoje = new Date();
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}`;
@@ -65,6 +65,14 @@ export default function MinhasLavagens({ userId }: { userId: string }) {
   }, [mesSelecionado]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Recarrega ao receber sinal do botão de refresh do painel (pula o 1º render)
+  const primeiroRender = useRef(true);
+  useEffect(() => {
+    if (primeiroRender.current) { primeiroRender.current = false; return; }
+    carregar();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recarregarSinal]);
 
   async function excluir(id: string) {
     if (!confirm("Excluir esta lavagem?")) return;
