@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { LavagemComPerfil } from "@/lib/types";
 import ChatLavagem from "@/components/ChatLavagem";
-import LimpezaInterna from "@/components/LimpezaInterna";
 import MinhasLavagens from "@/components/MinhasLavagens";
 import LogoMX from "@/components/LogoMX";
 import jsPDF from "jspdf";
@@ -82,7 +81,7 @@ export default function PainelPage() {
   const [papel, setPapel] = useState("");
   const [userId, setUserId] = useState("");
   const [autenticado, setAutenticado] = useState(false);
-  const [aba, setAba] = useState<"lavagens" | "limpeza" | "minhas">("lavagens");
+  const [aba, setAba] = useState<"lavagens" | "minhas">("lavagens");
 
   const isDev = papel === "dev";
   const isOperacional = papel === "operacional";
@@ -375,7 +374,6 @@ export default function PainelPage() {
           <div className="flex gap-2">
             {([
               { id: "lavagens", label: "Lavagens" },
-              { id: "limpeza", label: "Limpeza Interna" },
               { id: "minhas", label: "Minhas Lavagens" },
             ] as const).map(t => (
               <button
@@ -618,7 +616,6 @@ export default function PainelPage() {
           </>
         )}
 
-        {isDev && aba === "limpeza" && <LimpezaInterna userId={userId} />}
         {isDev && aba === "minhas" && <MinhasLavagens userId={userId} />}
       </main>
 
