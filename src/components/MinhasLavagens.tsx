@@ -232,7 +232,8 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
 
     const linhas = lavagens.map((l) => [
       l.placa_cavalo || "-",
-      l.placa_carreta || "-",
+      // 2ª carreta entra na mesma célula: "ABC1D23 / DEF4G56"
+      [l.placa_carreta, l.placa_carreta_2].filter(Boolean).join(" / ") || "-",
       formatarDataBR(l.data),
       rotuloTipo(l.tipo),
       formatarValor(Number(l.valor)),
