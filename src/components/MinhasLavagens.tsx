@@ -7,11 +7,44 @@ import ChatMinhasLavagens from "@/components/ChatMinhasLavagens";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+// Lookup de exibição (inclui "rodotrem" por causa de registros legados)
 const TIPOS = [
   { v: "bau", l: "Baú" },
   { v: "sider", l: "Sider" },
   { v: "rodotrem", l: "Rodotrem" },
+  { v: "outro", l: "Outro" },
 ] as const;
+
+// Opções oferecidas no modal de edição
+const TIPOS_EDICAO = [
+  { v: "sider", l: "Sider" },
+  { v: "bau", l: "Baú" },
+  { v: "outro", l: "Outro" },
+] as const;
+
+// Escopo -> valor fixo automático
+const ESCOPOS = [
+  { v: "cavalo", l: "Cavalo", valor: 30 },
+  { v: "carreta", l: "Carreta", valor: 30 },
+  { v: "truck", l: "Truck", valor: 30 },
+  { v: "ambos", l: "Ambos (Cavalo + Carreta)", valor: 30 },
+  { v: "rodotrem", l: "Rodotrem (cavalo + carreta + 2ª carreta)", valor: 60 },
+] as const;
+
+type CampoPlaca = "cavalo" | "carreta" | "carreta2";
+
+// Quais campos de placa aparecem para cada escopo
+function camposDoEscopo(escopo: string): CampoPlaca[] {
+  if (escopo === "cavalo" || escopo === "truck") return ["cavalo"];
+  if (escopo === "carreta") return ["carreta"];
+  if (escopo === "ambos") return ["cavalo", "carreta"];
+  if (escopo === "rodotrem") return ["cavalo", "carreta", "carreta2"];
+  return ["cavalo", "carreta", "carreta2"]; // escopo vazio/legado: mostra tudo
+}
+
+function valorDoEscopo(escopo: string): number | null {
+  return ESCOPOS.find(e => e.v === escopo)?.valor ?? null;
+}
 
 function mesParaLabel(valor: string) {
   const [ano, mes] = valor.split("-");
@@ -57,7 +90,7 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
     const fim = `${fimAno}-${String(fimMes).padStart(2, "0")}-01`;
     const { data: rows } = await supabase
       .from("lavagens_maxwel")
-      .select("id, data, placa_cavalo, placa_carreta, tipo, escopo, valor, observacao")
+      .select("id, data, placa_cavalo, placa_carreta, placa_carreta_2, tipo, escopo, valor, observacao")
       .gte("data", inicio).lt("data", fim).eq("excluido", false)
       .order("data", { ascending: false });
     setLavagens((rows as LavagemMaxwel[]) ?? []);
@@ -80,6 +113,59 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
     await supabase.from("lavagens_maxwel")
       .update({ excluido: true, excluido_em: new Date().toISOString() })
       .eq("id", id);
+    carregar();
+  }
+
+  // ── Edição ──
+  const [editando, setEditando] = useState<LavagemMaxwel | null>(null);
+  const [fCavalo, setFCavalo] = useState("");
+  const [fCarreta, setFCarreta] = useState("");
+  const [fCarreta2, setFCarreta2] = useState("");
+  const [fData, setFData] = useState("");
+  const [fEscopo, setFEscopo] = useState("");
+  const [fTipo, setFTipo] = useState("");
+  const [fValor, setFValor] = useState("");
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+
+  function abrirEdicao(l: LavagemMaxwel) {
+    setEditando(l);
+    setFCavalo(l.placa_cavalo ?? "");
+    setFCarreta(l.placa_carreta ?? "");
+    setFCarreta2(l.placa_carreta_2 ?? "");
+    setFData(l.data);
+    setFEscopo(l.escopo ?? "");
+    setFTipo(l.tipo ?? "");
+    setFValor(String(l.valor));
+  }
+
+  // Trocar o escopo recalcula o valor automaticamente (mas o campo segue editável)
+  function trocarEscopo(v: string) {
+    setFEscopo(v);
+    const auto = valorDoEscopo(v);
+    if (auto !== null) setFValor(String(auto));
+  }
+
+  async function salvarEdicao() {
+    if (!editando) return;
+    setSalvandoEdicao(true);
+    const campos = camposDoEscopo(fEscopo);
+    const norm = (s: string) => s.trim().toUpperCase() || null;
+    const valorNum = parseFloat(fValor.replace(",", "."));
+
+    const supabase = createClient();
+    await supabase.from("lavagens_maxwel").update({
+      data: fData,
+      // só persiste as placas aplicáveis ao escopo escolhido
+      placa_cavalo: campos.includes("cavalo") ? norm(fCavalo) : null,
+      placa_carreta: campos.includes("carreta") ? norm(fCarreta) : null,
+      placa_carreta_2: campos.includes("carreta2") ? norm(fCarreta2) : null,
+      escopo: fEscopo || null,
+      tipo: fTipo || null,
+      valor: isNaN(valorNum) || valorNum < 0 ? Number(editando.valor) : valorNum,
+    }).eq("id", editando.id); // mantém o mesmo id; não toca em excluido/excluido_em
+
+    setSalvandoEdicao(false);
+    setEditando(null);
     carregar();
   }
 
@@ -233,28 +319,40 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
         <div className="text-center py-12 text-mx-muted">Nenhuma lavagem registrada neste período.</div>
       ) : (
         <div className="card p-0 overflow-hidden">
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-3 text-white text-xs font-bold" style={{ background: "#6D5CF5" }}>
+          <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-4 py-3 text-white text-xs font-bold" style={{ background: "#6D5CF5" }}>
             <span>PLACAS / DATA</span>
             <span>TIPO</span>
             <span>VALOR</span>
-            <span className="sr-only">AÇÕES</span>
+            <span className="sr-only">EDITAR</span>
+            <span className="sr-only">EXCLUIR</span>
           </div>
           {lavagens.map((l, i) => (
             <div
               key={l.id}
-              className="grid grid-cols-[1fr_auto_auto_auto] gap-3 px-4 py-3 items-center"
+              className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 px-4 py-3 items-center"
               style={{ background: i % 2 === 0 ? "#0D0D12" : "#0F0F16", borderTop: "1px solid #1D1D26" }}
             >
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono font-bold text-white text-sm">{l.placa_cavalo || "—"}</span>
                   {l.placa_carreta && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta}</span></>}
+                  {l.placa_carreta_2 && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta_2}</span></>}
                 </div>
                 <p className="text-xs text-mx-muted mt-0.5">{formatarDataBR(l.data)}</p>
                 {l.observacao && <p className="text-xs text-mx-soft mt-0.5">{l.observacao}</p>}
               </div>
               <span className="badge-roxo">{rotuloTipo(l.tipo)}</span>
               <span className="text-sm text-white">{formatarValor(Number(l.valor))}</span>
+              <button
+                onClick={() => abrirEdicao(l)}
+                className="text-[#8B7CF8] hover:text-white transition-colors px-1"
+                aria-label="Editar lavagem"
+                title="Editar"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
               <button
                 onClick={() => excluir(l.id)}
                 className="text-sm text-red-400 hover:text-red-300 transition-colors px-1"
@@ -264,6 +362,142 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de edição */}
+      {editando && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.6)" }}
+          onClick={() => setEditando(null)}
+        >
+          <div
+            className="card w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <p className="section-label">Editar Lavagem</p>
+              <button
+                onClick={() => setEditando(null)}
+                className="text-mx-muted hover:text-white transition-colors"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Placas — até 3 campos lado a lado, conforme o escopo */}
+            <div>
+              <label className="block text-xs text-mx-muted mb-1">PLACAS</label>
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${camposDoEscopo(fEscopo).length}, minmax(0, 1fr))` }}>
+                {camposDoEscopo(fEscopo).includes("cavalo") && (
+                  <input
+                    type="text"
+                    value={fCavalo}
+                    onChange={e => setFCavalo(e.target.value.toUpperCase())}
+                    maxLength={8}
+                    placeholder="CAVALO"
+                    className="input-field text-sm font-mono uppercase px-3"
+                  />
+                )}
+                {camposDoEscopo(fEscopo).includes("carreta") && (
+                  <input
+                    type="text"
+                    value={fCarreta}
+                    onChange={e => setFCarreta(e.target.value.toUpperCase())}
+                    maxLength={8}
+                    placeholder="CARRETA"
+                    className="input-field text-sm font-mono uppercase px-3"
+                  />
+                )}
+                {camposDoEscopo(fEscopo).includes("carreta2") && (
+                  <input
+                    type="text"
+                    value={fCarreta2}
+                    onChange={e => setFCarreta2(e.target.value.toUpperCase())}
+                    maxLength={8}
+                    placeholder="2ª CARRETA"
+                    className="input-field text-sm font-mono uppercase px-3"
+                  />
+                )}
+              </div>
+              <p className="text-[11px] text-mx-muted mt-1">Qualquer campo pode ficar em branco.</p>
+            </div>
+
+            {/* Data */}
+            <div>
+              <label className="block text-xs text-mx-muted mb-1">DATA</label>
+              <input
+                type="date"
+                value={fData}
+                onChange={e => setFData(e.target.value)}
+                className="input-field text-sm"
+              />
+            </div>
+
+            {/* Escopo */}
+            <div>
+              <label className="block text-xs text-mx-muted mb-1">ESCOPO</label>
+              <select
+                value={fEscopo}
+                onChange={e => trocarEscopo(e.target.value)}
+                className="input-field text-sm"
+              >
+                <option value="" className="bg-[#0D0D12]">— sem escopo —</option>
+                {ESCOPOS.map(e => (
+                  <option key={e.v} value={e.v} className="bg-[#0D0D12]">
+                    {e.l} — R${e.valor}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tipo */}
+            <div>
+              <label className="block text-xs text-mx-muted mb-1">TIPO</label>
+              <select
+                value={fTipo}
+                onChange={e => setFTipo(e.target.value)}
+                className="input-field text-sm"
+              >
+                <option value="" className="bg-[#0D0D12]">— sem tipo —</option>
+                {TIPOS_EDICAO.map(t => (
+                  <option key={t.v} value={t.v} className="bg-[#0D0D12]">{t.l}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Valor */}
+            <div>
+              <label className="block text-xs text-mx-muted mb-1">VALOR (R$)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={fValor}
+                onChange={e => setFValor(e.target.value)}
+                className="input-field text-sm"
+              />
+              <p className="text-[11px] text-mx-muted mt-1">Preenchido automático pelo escopo, mas pode ajustar à mão.</p>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setEditando(null)}
+                className="btn-secondary flex-1 py-2.5 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={salvarEdicao}
+                disabled={salvandoEdicao}
+                className="btn-primary flex-1 py-2.5 text-sm"
+              >
+                {salvandoEdicao ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

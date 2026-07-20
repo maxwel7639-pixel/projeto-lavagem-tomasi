@@ -30,6 +30,7 @@ export interface LavagemMaxwel {
   data: string; // date (YYYY-MM-DD)
   placa_cavalo: string | null;
   placa_carreta: string | null;
+  placa_carreta_2: string | null;
   tipo: string | null;
   escopo: string | null;
   valor: number;
