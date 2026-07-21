@@ -129,9 +129,20 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
 
   function abrirEdicao(l: LavagemMaxwel) {
     setEditando(l);
-    setFCavalo(l.placa_cavalo ?? "");
-    setFCarreta(l.placa_carreta ?? "");
-    setFCarreta2(l.placa_carreta_2 ?? "");
+    const campos = camposDoEscopo(l.escopo ?? "");
+    if (campos.length === 1) {
+      // Escopo de placa única (cavalo/carreta/truck): pré-preenche o único campo com a
+      // placa que existir, mesmo que dados legados a tenham salvo em outra coluna.
+      // Ao salvar, ela é gravada na coluna correta do escopo (as demais viram NULL).
+      const unica = l.placa_cavalo ?? l.placa_carreta ?? l.placa_carreta_2 ?? "";
+      setFCavalo(campos[0] === "cavalo" ? unica : "");
+      setFCarreta(campos[0] === "carreta" ? unica : "");
+      setFCarreta2("");
+    } else {
+      setFCavalo(l.placa_cavalo ?? "");
+      setFCarreta(l.placa_carreta ?? "");
+      setFCarreta2(l.placa_carreta_2 ?? "");
+    }
     setFData(l.data);
     setFEscopo(l.escopo ?? "");
     setFTipo(l.tipo ?? "");
@@ -335,9 +346,9 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
             >
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono font-bold text-white text-sm">{l.placa_cavalo || "—"}</span>
-                  {l.placa_carreta && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta}</span></>}
-                  {l.placa_carreta_2 && <><span className="text-mx-muted">/</span><span className="font-mono font-bold text-white text-sm">{l.placa_carreta_2}</span></>}
+                  <span className="font-mono font-bold text-white text-sm">
+                    {[l.placa_cavalo, l.placa_carreta, l.placa_carreta_2].filter(Boolean).join(" / ") || "—"}
+                  </span>
                 </div>
                 <p className="text-xs text-mx-muted mt-0.5">{formatarDataBR(l.data)}</p>
                 {l.observacao && <p className="text-xs text-mx-soft mt-0.5">{l.observacao}</p>}
