@@ -71,6 +71,17 @@ function rotuloTipo(tipo: string | null) {
   return TIPOS.find(t => t.v === tipo)?.l ?? "-";
 }
 
+// Texto das placas na lista.
+// Rodotrem: mostra sempre os 3 lugares (cavalo / carreta / 2ª carreta), com "—" onde
+// faltar — ex.: rodotrem cujo cavalo ainda não foi lavado aparece "— / carreta / 2ª".
+// Demais escopos: junta só as placas que existem (placa única, ambos, etc.).
+function placasLista(l: LavagemMaxwel): string {
+  if (l.escopo === "rodotrem") {
+    return [l.placa_cavalo || "—", l.placa_carreta || "—", l.placa_carreta_2 || "—"].join(" / ");
+  }
+  return [l.placa_cavalo, l.placa_carreta, l.placa_carreta_2].filter(Boolean).join(" / ") || "—";
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function MinhasLavagens({ userId, recarregarSinal }: { userId: string; recarregarSinal?: number }) {
   const [mesSelecionado, setMesSelecionado] = useState(() => {
@@ -347,7 +358,7 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono font-bold text-white text-sm">
-                    {[l.placa_cavalo, l.placa_carreta, l.placa_carreta_2].filter(Boolean).join(" / ") || "—"}
+                    {placasLista(l)}
                   </span>
                 </div>
                 <p className="text-xs text-mx-muted mt-0.5">{formatarDataBR(l.data)}</p>
