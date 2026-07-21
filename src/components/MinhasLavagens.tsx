@@ -90,9 +90,9 @@ export default function MinhasLavagens({ userId, recarregarSinal }: { userId: st
     const fim = `${fimAno}-${String(fimMes).padStart(2, "0")}-01`;
     const { data: rows } = await supabase
       .from("lavagens_maxwel")
-      .select("id, data, placa_cavalo, placa_carreta, placa_carreta_2, tipo, escopo, valor, observacao")
+      .select("id, data, placa_cavalo, placa_carreta, placa_carreta_2, tipo, escopo, valor, observacao, created_at")
       .gte("data", inicio).lt("data", fim).eq("excluido", false)
-      .order("data", { ascending: false });
+      .order("created_at", { ascending: false });
     setLavagens((rows as LavagemMaxwel[]) ?? []);
     setCarregando(false);
   }, [mesSelecionado]);
